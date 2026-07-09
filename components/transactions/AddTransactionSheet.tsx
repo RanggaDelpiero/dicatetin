@@ -310,13 +310,13 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
         </div>
 
         {/* Category Grid */}
-        <div className="mb-3">
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+        <div className="mb-3 overflow-hidden">
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-5 -mx-5">
             {filteredCategories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => { haptic('light'); setSelectedCategoryId(cat.id); }}
-                className="flex flex-col items-center gap-1 flex-shrink-0 w-16 text-center"
+                className="flex flex-col items-center gap-1 flex-shrink-0 w-[72px] text-center"
               >
                 <div
                   className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
@@ -328,7 +328,7 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
                 >
                   <DynamicIcon name={cat.icon} size={22} weight="duotone" style={{ color: cat.color }} />
                 </div>
-                <span className={`text-[10px] leading-tight text-center break-words line-clamp-2 w-full ${
+                <span className={`text-[10px] leading-tight text-center break-all line-clamp-2 w-full ${
                   selectedCategoryId === cat.id ? 'text-text-primary font-medium' : 'text-text-tertiary'
                 }`}>
                   {cat.name}

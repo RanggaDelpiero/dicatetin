@@ -128,14 +128,19 @@ Kembalikan format JSON saja.`,
     const resData = await response.json();
     let reply = resData.choices?.[0]?.message?.content || '';
 
-    // Clean JSON wrappers if AI output is wrapped
-    reply = reply.replace(/```json/g, '').replace(/```/g, '').trim();
+    // Robust extraction helper to extract the first JSON object block
+    let cleanReply = reply.trim();
+    const firstBrace = cleanReply.indexOf('{');
+    const lastBrace = cleanReply.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      cleanReply = cleanReply.substring(firstBrace, lastBrace + 1);
+    }
 
     try {
-      const parsed = JSON.parse(reply);
+      const parsed = JSON.parse(cleanReply);
       return Response.json(parsed);
     } catch (parseErr) {
-      console.error('[AI Extract] Failed to parse AI output as JSON:', reply);
+      console.error('[AI Extract] Failed to parse AI output as JSON. Original:', reply, 'Cleaned:', cleanReply);
       return Response.json({ error: 'AI mengembalikan format yang tidak valid.' }, { status: 500 });
     }
   } catch (error) {
