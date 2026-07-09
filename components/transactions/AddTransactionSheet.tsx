@@ -6,7 +6,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Backspace, CalendarBlank, Notebook, ArrowUp, ArrowDown } from '@phosphor-icons/react';
+import { Backspace, CalendarBlank, Notebook, ArrowUp, ArrowDown, Camera, Microphone } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
@@ -31,6 +31,143 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
   const [note, setNote] = useState('');
   const [date, setDate] = useState(getToday());
   const [showNote, setShowNote] = useState(false);
+  const [isAiExtracting, setIsAiExtracting] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    haptic('medium');
+    setIsAiExtracting(true);
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const base64String = reader.result as string;
+        const res = await fetch('/api/extract', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'photo',
+            image: base64String,
+            mode: 'transaction',
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Gagal mengekstrak data.');
+        }
+
+        const result = await res.json();
+        if (result.amount) {
+          haptic('success');
+          setAmount(result.amount.toString());
+          if (result.type) setType(result.type);
+          if (result.note) {
+            setNote(result.note);
+            setShowNote(true);
+          }
+          if (result.category) {
+            const cat = categories.find(
+              (c) => c.name.toLowerCase().trim() === result.category.toLowerCase().trim()
+            );
+            if (cat) setSelectedCategoryId(cat.id);
+          }
+        }
+      } catch (err: any) {
+        console.error(err);
+        haptic('error');
+        alert(err.message || 'Gagal mengekstrak bill dari foto.');
+      } finally {
+        setIsAiExtracting(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleVoiceRecord = () => {
+    haptic('medium');
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Pencatatan suara tidak didukung oleh browser Anda. Gunakan Chrome atau Safari.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'id-ID';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+    };
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setIsRecording(false);
+      setIsAiExtracting(true);
+
+      try {
+        const res = await fetch('/api/extract', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'voice',
+            text: transcript,
+            mode: 'transaction',
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Gagal mengekstrak ucapan.');
+        }
+
+        const result = await res.json();
+        if (result.amount) {
+          haptic('success');
+          setAmount(result.amount.toString());
+          if (result.type) setType(result.type);
+          if (result.note) {
+            setNote(result.note);
+            setShowNote(true);
+          }
+          if (result.category) {
+            const cat = categories.find(
+              (c) => c.name.toLowerCase().trim() === result.category.toLowerCase().trim()
+            );
+            if (cat) setSelectedCategoryId(cat.id);
+          }
+        }
+      } catch (err: any) {
+        console.error(err);
+        haptic('error');
+        alert(err.message || 'AI gagal memahami catatan suaramu.');
+      } finally {
+        setIsAiExtracting(false);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error(event);
+      setIsRecording(false);
+      haptic('error');
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+  };
 
   const { addTransaction, categories } = useTransactionStore();
   const { wallets, updateBalance } = useWalletStore();
@@ -179,7 +316,7 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
               <button
                 key={cat.id}
                 onClick={() => { haptic('light'); setSelectedCategoryId(cat.id); }}
-                className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                className="flex flex-col items-center gap-1 flex-shrink-0 w-16 text-center"
               >
                 <div
                   className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
@@ -191,7 +328,7 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
                 >
                   <DynamicIcon name={cat.icon} size={22} weight="duotone" style={{ color: cat.color }} />
                 </div>
-                <span className={`text-[11px] leading-tight ${
+                <span className={`text-[10px] leading-tight text-center break-words line-clamp-2 w-full ${
                   selectedCategoryId === cat.id ? 'text-text-primary font-medium' : 'text-text-tertiary'
                 }`}>
                   {cat.name}
@@ -210,17 +347,54 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
             }`}
           >
             <Notebook size={16} weight="duotone" />
-            {note || 'Catatan'}
+            <span className="max-w-[80px] truncate">{note || 'Catatan'}</span>
           </button>
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bg-secondary text-text-tertiary text-sm">
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bg-secondary text-text-tertiary text-sm flex-1">
             <CalendarBlank size={16} weight="duotone" />
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="bg-transparent text-text-secondary text-sm outline-none w-[100px]"
+              className="bg-transparent text-text-secondary text-sm outline-none w-full"
             />
           </div>
+        </div>
+
+        {/* AI Quick Add Row */}
+        <div className="flex gap-2 mb-4 relative">
+          {/* Camera Upload */}
+          <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-bg-secondary text-text-secondary hover:text-accent-secondary transition-colors cursor-pointer text-xs font-semibold">
+            <span>📸 Foto Bill</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoUpload}
+              disabled={isAiExtracting}
+            />
+          </label>
+
+          {/* Voice Command */}
+          <button
+            type="button"
+            onClick={handleVoiceRecord}
+            disabled={isAiExtracting}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              isRecording
+                ? 'bg-accent-danger text-white animate-pulse'
+                : 'bg-bg-secondary text-text-secondary'
+            }`}
+          >
+            <span>{isRecording ? '🔊 Mendengarkan...' : '🎤 Ngomong'}</span>
+          </button>
+
+          {/* Loading Indicator */}
+          {isAiExtracting && (
+            <div className="absolute inset-0 bg-bg-elevated/80 flex items-center justify-center gap-2 rounded-xl">
+              <span className="w-4 h-4 rounded-full border-2 border-accent-secondary border-t-transparent animate-spin" />
+              <span className="text-xs font-semibold text-accent-secondary animate-pulse">Pundi AI sedang membaca...</span>
+            </div>
+          )}
         </div>
 
         {/* Note Input */}

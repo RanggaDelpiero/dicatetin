@@ -7,14 +7,18 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowUp, ArrowDown, Sparkle, CaretRight, Robot, Plus } from '@phosphor-icons/react';
+import { ArrowUp, ArrowDown, Sparkle, CaretRight, Robot, Plus, PencilSimple } from '@phosphor-icons/react';
 import { StreakFlame } from '@/components/gamification/StreakFlame';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { DonutChart } from '@/components/charts/DonutChart';
+import { BudgetSettingsSheet } from '@/components/budget/BudgetSettingsSheet';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useWalletStore } from '@/lib/stores/wallet-store';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
+import { useBudgetStore } from '@/lib/stores/budget-store';
+import { useDebtStore } from '@/lib/stores/debt-store';
+import { useReceivableStore } from '@/lib/stores/receivable-store';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/currency';
 import { getCurrentMonthRange, getMonthName, formatRelativeDate } from '@/lib/utils/date';
 import { getLevelProgress, getLevelTitle } from '@/lib/gamification/xp';
@@ -28,8 +32,30 @@ export default function DashboardPage() {
   const { wallets, getTotalBalance } = useWalletStore();
   const { progress } = useGamificationStore();
 
+  const [showBudgetSheet, setShowBudgetSheet] = useState(false);
+
+  const { getTotalDailyBudget } = useBudgetStore();
+  const dailyBudgetLimit = getTotalDailyBudget();
+
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayExpense = useMemo(() => {
+    return transactions
+      .filter((tx) => tx.type === 'expense' && tx.date.split('T')[0] === todayStr)
+      .reduce((sum, tx) => sum + tx.amount, 0);
+  }, [transactions, todayStr]);
+
+  const remainingDailyBudget = dailyBudgetLimit - todayExpense;
+  const dailyBudgetPct = dailyBudgetLimit > 0
+    ? Math.max(0, Math.min(100, Math.round((remainingDailyBudget / dailyBudgetLimit) * 100)))
+    : 0;
+
   const { start, end } = getCurrentMonthRange();
   const totalBalance = getTotalBalance();
+
+  const totalReceivables = useReceivableStore((state) => state.getTotalReceivable());
+  const totalDebts = useDebtStore((state) => state.getTotalDebt());
+  const netWorth = totalBalance + totalReceivables - totalDebts;
+
   const monthIncome = getTotalByType('income', start, end);
   const monthExpense = getTotalByType('expense', start, end);
   const categoryTotals = getCategoryTotals(start, end, 'expense');
@@ -95,12 +121,115 @@ export default function DashboardPage() {
       </div>
 
       <div className="px-5 space-y-5 pb-8">
+        {/* Daily Budget Hero (PRD §5.7: "Hero pertama yang terlihat: Budget Harian") */}
+        <motion.div
+          className="rounded-[24px] bg-bg-elevated shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5 border border-border-light text-center relative overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, type: 'spring', stiffness: 200 }}
+        >
+          {dailyBudgetLimit === 0 ? (
+            <div className="py-4">
+              <span className="text-4xl">🎯</span>
+              <h3 className="text-base font-bold text-text-primary mt-2">Atur Budget Harianmu!</h3>
+              <p className="text-xs text-text-tertiary mt-1 mb-4 leading-relaxed max-w-[280px] mx-auto">
+                Mulai atur limit belanja harian per kategori biar keuanganmu tetap terkontrol.
+              </p>
+              <button
+                onClick={() => { haptic('light'); setShowBudgetSheet(true); }}
+                className="px-5 py-2.5 rounded-xl bg-accent-secondary text-white text-xs font-bold active:scale-95 transition-all shadow-md"
+              >
+                Atur Budget Sekarang ✨
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <div className="flex justify-between items-center w-full mb-3">
+                <span className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">
+                  Sisa Budget Hari Ini
+                </span>
+                <button
+                  onClick={() => { haptic('light'); setShowBudgetSheet(true); }}
+                  className="flex items-center gap-1 text-[11px] font-bold text-accent-secondary bg-accent-secondary/10 px-2.5 py-1 rounded-lg"
+                >
+                  <PencilSimple size={12} /> Atur
+                </button>
+              </div>
+
+              {/* Progress Ring with Daily mascot */}
+              <div className="relative my-2">
+                <ProgressRing
+                  percentage={dailyBudgetPct}
+                  size={120}
+                  strokeWidth={8}
+                  color={remainingDailyBudget >= 0 ? "var(--accent-primary)" : "var(--accent-danger)"}
+                >
+                  <span className="text-4xl">🐷</span>
+                </ProgressRing>
+              </div>
+
+              <h2 className={`text-2xl font-bold tabular-nums tracking-tight mt-3 ${
+                remainingDailyBudget >= 0 ? 'text-text-primary' : 'text-accent-danger'
+              }`}>
+                {remainingDailyBudget >= 0
+                  ? formatCurrency(remainingDailyBudget)
+                  : `Boncos ${formatCurrency(Math.abs(remainingDailyBudget))}!`}
+              </h2>
+
+              <p className="text-[11px] text-text-tertiary mt-1 tabular-nums">
+                Limit harian: {formatCurrency(dailyBudgetLimit)} · Terpakai: {formatCurrency(todayExpense)}
+              </p>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Accounting Net Worth Panel */}
+        <motion.div
+          className="rounded-[20px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-4 border border-border-light"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="flex justify-between items-center mb-3">
+            <div>
+              <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-semibold">Kekayaan Bersih (Net Worth)</p>
+              <h3 className="text-xl font-bold text-text-primary tabular-nums mt-0.5">
+                {formatCurrency(netWorth)}
+              </h3>
+            </div>
+            <span className="text-xs px-2 py-1 rounded-full bg-accent-secondary/10 text-accent-secondary font-bold">
+              Akuntansi 📊
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border-light text-center">
+            <div>
+              <p className="text-[9px] text-text-tertiary uppercase font-semibold">Aset (Saldo)</p>
+              <p className="text-xs font-bold text-accent-primary tabular-nums mt-0.5">
+                {formatCurrencyCompact(totalBalance)}
+              </p>
+            </div>
+            <div className="border-x border-border-light">
+              <p className="text-[9px] text-text-tertiary uppercase font-semibold">Piutang</p>
+              <p className="text-xs font-bold text-accent-secondary tabular-nums mt-0.5">
+                {formatCurrencyCompact(totalReceivables)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[9px] text-text-tertiary uppercase font-semibold">Kewajiban</p>
+              <p className="text-xs font-bold text-accent-danger tabular-nums mt-0.5">
+                {formatCurrencyCompact(totalDebts)}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Balance Card */}
         <motion.div
           className="relative overflow-hidden rounded-[20px] p-5 bg-gradient-to-br from-accent-secondary to-accent-primary text-white"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+          transition={{ delay: 0.35, type: 'spring', stiffness: 200 }}
         >
           {/* Decorative circles */}
           <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10" />
@@ -337,6 +466,7 @@ export default function DashboardPage() {
           )}
         </motion.div>
       </div>
+      <BudgetSettingsSheet isOpen={showBudgetSheet} onClose={() => setShowBudgetSheet(false)} />
     </div>
   );
 }

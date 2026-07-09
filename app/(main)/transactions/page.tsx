@@ -199,7 +199,7 @@ export default function TransactionsPage() {
                               setSwipedId(null);
                             }
                           }}
-                          animate={{ x: isSwiped ? -80 : 0 }}
+                          animate={{ x: isSwiped ? -80 : 0, opacity: 1, y: 0 }}
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                           initial={{ opacity: 0, y: 10 }}
                         >

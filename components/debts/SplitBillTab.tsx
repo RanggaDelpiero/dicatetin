@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash, CheckCircle, UsersThree, X } from '@phosphor-icons/react';
+import { Plus, Trash, CheckCircle, UsersThree, X, Camera, Microphone } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useSplitBillStore } from '@/lib/stores/splitbill-store';
 import { useReceivableStore } from '@/lib/stores/receivable-store';
@@ -28,6 +28,129 @@ export function SplitBillTab() {
   const [totalAmount, setTotalAmount] = useState('');
   const [participantInput, setParticipantInput] = useState('');
   const [participants, setParticipants] = useState<string[]>([]);
+  const [isAiExtracting, setIsAiExtracting] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    haptic('medium');
+    setIsAiExtracting(true);
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const base64String = reader.result as string;
+        const res = await fetch('/api/extract', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'photo',
+            image: base64String,
+            mode: 'split',
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Gagal mengekstrak data.');
+        }
+
+        const result = await res.json();
+        if (result.total_amount) {
+          haptic('success');
+          setTotalAmount(result.total_amount.toString());
+          if (result.title) setTitle(result.title);
+          if (result.participants && Array.isArray(result.participants)) {
+            setParticipants(result.participants);
+          }
+        }
+      } catch (err: any) {
+        console.error(err);
+        haptic('error');
+        alert(err.message || 'Gagal mengekstrak bill dari foto.');
+      } finally {
+        setIsAiExtracting(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleVoiceRecord = () => {
+    haptic('medium');
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Pencatatan suara tidak didukung oleh browser Anda. Gunakan Chrome atau Safari.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'id-ID';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+    };
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setIsRecording(false);
+      setIsAiExtracting(true);
+
+      try {
+        const res = await fetch('/api/extract', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'voice',
+            text: transcript,
+            mode: 'split',
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Gagal mengekstrak ucapan.');
+        }
+
+        const result = await res.json();
+        if (result.total_amount) {
+          haptic('success');
+          setTotalAmount(result.total_amount.toString());
+          if (result.title) setTitle(result.title);
+          if (result.participants && Array.isArray(result.participants)) {
+            setParticipants(result.participants);
+          }
+        }
+      } catch (err: any) {
+        console.error(err);
+        haptic('error');
+        alert(err.message || 'AI gagal memahami catatan suaramu.');
+      } finally {
+        setIsAiExtracting(false);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error(event);
+      setIsRecording(false);
+      haptic('error');
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+  };
 
   const addParticipant = () => {
     if (participantInput.trim() && !participants.includes(participantInput.trim())) {
@@ -219,6 +342,40 @@ export function SplitBillTab() {
               placeholder="0"
               className="w-full px-4 py-3 rounded-xl bg-bg-secondary text-text-primary placeholder:text-text-tertiary outline-none text-sm tabular-nums"
             />
+          </div>
+
+          {/* AI Split Bill Extraction Row */}
+          <div className="flex gap-2 relative">
+            <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-bg-secondary text-text-secondary hover:text-accent-secondary transition-colors cursor-pointer text-xs font-semibold">
+              <span>📸 Foto Struk</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoUpload}
+                disabled={isAiExtracting}
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={handleVoiceRecord}
+              disabled={isAiExtracting}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                isRecording
+                  ? 'bg-accent-danger text-white animate-pulse'
+                  : 'bg-bg-secondary text-text-secondary'
+              }`}
+            >
+              <span>{isRecording ? '🔊 Mendengarkan...' : '🎤 Ngomong'}</span>
+            </button>
+
+            {isAiExtracting && (
+              <div className="absolute inset-0 bg-bg-elevated/80 flex items-center justify-center gap-2 rounded-xl">
+                <span className="w-4 h-4 rounded-full border-2 border-accent-secondary border-t-transparent animate-spin" />
+                <span className="text-xs font-semibold text-accent-secondary animate-pulse">Pundi AI sedang membaca...</span>
+              </div>
+            )}
           </div>
 
           {/* Participants */}
