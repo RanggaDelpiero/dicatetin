@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22C55E"/>
+      <stop offset="100%" style="stop-color:#6366F1"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Piggy bank body -->
+  <ellipse cx="256" cy="290" rx="110" ry="90" fill="#FFF5E6" opacity="0.95"/>
+  <!-- Coin slot -->
+  <rect x="236" y="196" width="40" height="8" rx="4" fill="#FFC53D"/>
+  <!-- Ear -->
+  <ellipse cx="195" cy="225" rx="25" ry="30" fill="#FFD9B3" opacity="0.9"/>
+  <ellipse cx="195" cy="225" rx="15" ry="18" fill="#FFB88C" opacity="0.7"/>
+  <!-- Eye -->
+  <circle cx="225" cy="270" r="8" fill="#111114"/>
+  <circle cx="222" cy="267" r="3" fill="white" opacity="0.7"/>
+  <!-- Snout -->
+  <ellipse cx="285" cy="295" rx="30" ry="22" fill="#FFB88C" opacity="0.8"/>
+  <circle cx="278" cy="293" r="4" fill="#C68060"/>
+  <circle cx="292" cy="293" r="4" fill="#C68060"/>
+  <!-- Smile -->
+  <path d="M 240 310 Q 260 330 280 310" fill="none" stroke="#C68060" stroke-width="3" stroke-linecap="round"/>
+  <!-- Legs -->
+  <rect x="195" y="365" width="20" height="25" rx="10" fill="#FFD9B3" opacity="0.9"/>
+  <rect x="300" y="365" width="20" height="25" rx="10" fill="#FFD9B3" opacity="0.9"/>
+  <!-- Tail -->
+  <path d="M 365 280 Q 385 260 375 240 Q 365 220 380 210" fill="none" stroke="#FFD9B3" stroke-width="6" stroke-linecap="round"/>
+</svg>

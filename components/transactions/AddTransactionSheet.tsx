@@ -1,0 +1,284 @@
+// ============================================
+// Pundi — Add Transaction Bottom Sheet
+// ============================================
+
+"use client";
+
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Backspace, CalendarBlank, Notebook, ArrowUp, ArrowDown } from '@phosphor-icons/react';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { DynamicIcon } from '@/components/ui/DynamicIcon';
+import { useTransactionStore } from '@/lib/stores/transaction-store';
+import { useWalletStore } from '@/lib/stores/wallet-store';
+import { useGamificationStore } from '@/lib/stores/gamification-store';
+import { formatCurrency } from '@/lib/utils/currency';
+import { getToday } from '@/lib/utils/date';
+import { haptic } from '@/lib/utils/haptic';
+import { XP_REWARDS } from '@/lib/gamification/xp';
+import type { TransactionType } from '@/lib/types';
+
+interface AddTransactionSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProps) {
+  const [type, setType] = useState<TransactionType>('expense');
+  const [amount, setAmount] = useState('0');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedWalletId, setSelectedWalletId] = useState<string>('');
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState(getToday());
+  const [showNote, setShowNote] = useState(false);
+
+  const { addTransaction, categories } = useTransactionStore();
+  const { wallets, updateBalance } = useWalletStore();
+  const { addXP, recordActivity } = useGamificationStore();
+
+  const filteredCategories = useMemo(
+    () => categories.filter((c) => c.type === type),
+    [categories, type]
+  );
+
+  // Auto-select first category
+  React.useEffect(() => {
+    if (filteredCategories.length > 0 && !selectedCategoryId) {
+      setSelectedCategoryId(filteredCategories[0].id);
+    }
+  }, [filteredCategories, selectedCategoryId]);
+
+  // Auto-select first wallet
+  React.useEffect(() => {
+    if (wallets.length > 0 && !selectedWalletId) {
+      setSelectedWalletId(wallets[0].id);
+    }
+  }, [wallets, selectedWalletId]);
+
+  const handleKeyPress = (key: string) => {
+    haptic('light');
+    if (key === 'backspace') {
+      setAmount((prev) => (prev.length <= 1 ? '0' : prev.slice(0, -1)));
+    } else if (key === '000') {
+      if (amount !== '0') setAmount((prev) => prev + '000');
+    } else {
+      if (amount === '0') {
+        setAmount(key);
+      } else if (amount.length < 12) {
+        setAmount((prev) => prev + key);
+      }
+    }
+  };
+
+  const handleSubmit = () => {
+    const numAmount = parseInt(amount, 10);
+    if (numAmount <= 0 || !selectedCategoryId || !selectedWalletId) {
+      haptic('error');
+      return;
+    }
+
+    haptic('success');
+
+    // Add transaction
+    addTransaction({
+      type,
+      amount: numAmount,
+      category_id: selectedCategoryId,
+      wallet_id: selectedWalletId,
+      date,
+      note: note || undefined,
+    });
+
+    // Update wallet balance
+    updateBalance(selectedWalletId, type === 'income' ? numAmount : -numAmount);
+
+    // Gamification
+    addXP(XP_REWARDS.ADD_TRANSACTION);
+    recordActivity();
+
+    // Reset form
+    setAmount('0');
+    setNote('');
+    setShowNote(false);
+    onClose();
+  };
+
+  const handleTypeToggle = (newType: TransactionType) => {
+    haptic('light');
+    setType(newType);
+    setSelectedCategoryId('');
+  };
+
+  const numericAmount = parseInt(amount, 10);
+
+  return (
+    <BottomSheet isOpen={isOpen} onClose={onClose} fullHeight>
+      <div className="flex flex-col h-full px-5 pt-2 pb-safe">
+        {/* Type Toggle */}
+        <div className="flex gap-2 p-1 rounded-xl bg-bg-secondary mb-4">
+          <button
+            onClick={() => handleTypeToggle('expense')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              type === 'expense'
+                ? 'bg-accent-danger text-white shadow-md'
+                : 'text-text-secondary'
+            }`}
+          >
+            <ArrowDown size={16} weight="bold" />
+            Pengeluaran
+          </button>
+          <button
+            onClick={() => handleTypeToggle('income')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              type === 'income'
+                ? 'bg-accent-primary text-white shadow-md'
+                : 'text-text-secondary'
+            }`}
+          >
+            <ArrowUp size={16} weight="bold" />
+            Pemasukan
+          </button>
+        </div>
+
+        {/* Amount Display */}
+        <div className="text-center mb-4">
+          <motion.div
+            key={amount}
+            initial={{ scale: 1.05 }}
+            animate={{ scale: 1 }}
+            className={`text-[34px] font-bold tabular-nums ${
+              type === 'income' ? 'text-accent-primary' : 'text-text-primary'
+            }`}
+          >
+            {formatCurrency(numericAmount)}
+          </motion.div>
+        </div>
+
+        {/* Wallet Selector */}
+        <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
+          {wallets.map((wallet) => (
+            <button
+              key={wallet.id}
+              onClick={() => { haptic('light'); setSelectedWalletId(wallet.id); }}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl whitespace-nowrap text-sm transition-all flex-shrink-0 ${
+                selectedWalletId === wallet.id
+                  ? 'bg-accent-secondary text-white shadow-md'
+                  : 'bg-bg-secondary text-text-secondary'
+              }`}
+            >
+              <DynamicIcon name={wallet.icon} size={16} weight="duotone" />
+              {wallet.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Category Grid */}
+        <div className="mb-3">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+            {filteredCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => { haptic('light'); setSelectedCategoryId(cat.id); }}
+                className="flex flex-col items-center gap-1.5 flex-shrink-0"
+              >
+                <div
+                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                    selectedCategoryId === cat.id
+                      ? 'ring-2 ring-accent-secondary ring-offset-2 ring-offset-bg-elevated scale-110'
+                      : 'opacity-60'
+                  }`}
+                  style={{ backgroundColor: cat.color + '20' }}
+                >
+                  <DynamicIcon name={cat.icon} size={22} weight="duotone" style={{ color: cat.color }} />
+                </div>
+                <span className={`text-[11px] leading-tight ${
+                  selectedCategoryId === cat.id ? 'text-text-primary font-medium' : 'text-text-tertiary'
+                }`}>
+                  {cat.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Note & Date Row */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setShowNote(!showNote)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm ${
+              showNote || note ? 'bg-accent-secondary/10 text-accent-secondary' : 'bg-bg-secondary text-text-tertiary'
+            }`}
+          >
+            <Notebook size={16} weight="duotone" />
+            {note || 'Catatan'}
+          </button>
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bg-secondary text-text-tertiary text-sm">
+            <CalendarBlank size={16} weight="duotone" />
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="bg-transparent text-text-secondary text-sm outline-none w-[100px]"
+            />
+          </div>
+        </div>
+
+        {/* Note Input */}
+        <AnimatePresence>
+          {showNote && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="mb-4 overflow-hidden"
+            >
+              <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Tulis catatan..."
+                className="w-full px-4 py-3 rounded-xl bg-bg-secondary text-text-primary placeholder:text-text-tertiary outline-none text-sm"
+                autoFocus
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Keypad */}
+        <div className="grid grid-cols-3 gap-2 mb-4 flex-1 content-end">
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', 'backspace'].map(
+            (key) => (
+              <button
+                key={key}
+                onClick={() => handleKeyPress(key)}
+                className="h-14 rounded-xl bg-bg-secondary text-text-primary text-xl font-medium flex items-center justify-center active:bg-border-medium transition-colors haptic-press"
+              >
+                {key === 'backspace' ? (
+                  <Backspace size={24} weight="regular" />
+                ) : (
+                  key
+                )}
+              </button>
+            )
+          )}
+        </div>
+
+        {/* Submit Button */}
+        <button
+          onClick={handleSubmit}
+          disabled={numericAmount <= 0}
+          className={`w-full py-4 rounded-2xl text-white font-semibold text-[17px] transition-all active:scale-[0.98] ${
+            numericAmount > 0
+              ? type === 'income'
+                ? 'bg-accent-primary shadow-[0_4px_20px_rgba(34,197,94,0.3)]'
+                : 'bg-accent-danger shadow-[0_4px_20px_rgba(239,68,68,0.3)]'
+              : 'bg-text-tertiary/30 cursor-not-allowed'
+          }`}
+          style={{ marginBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}
+        >
+          {type === 'income' ? '💰 Simpan Pemasukan' : '💸 Simpan Pengeluaran'}
+        </button>
+      </div>
+    </BottomSheet>
+  );
+}
