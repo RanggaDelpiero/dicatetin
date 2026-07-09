@@ -4,9 +4,10 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Moon, Sun, SignOut, Trash, Info, Sparkle } from '@phosphor-icons/react';
+import Link from 'next/link';
+import { Moon, Sun, SignOut, Trash, Info, Sparkle, User } from '@phosphor-icons/react';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
@@ -18,11 +19,27 @@ import { getLevelProgress, getLevelTitle } from '@/lib/gamification/xp';
 import { getStreakColor, getStreakMessage } from '@/lib/gamification/streak';
 import { BADGES } from '@/lib/gamification/badges';
 import { haptic } from '@/lib/utils/haptic';
+import { supabase } from '@/lib/supabase/client';
 
 export default function ProfilePage() {
   const { progress } = useGamificationStore();
   const { transactions } = useTransactionStore();
   const { wallets } = useWalletStore();
+
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+  }, []);
+
+  const handleSignOut = async () => {
+    haptic('medium');
+    await supabase.auth.signOut();
+    setUser(null);
+    window.location.reload();
+  };
 
   const levelProgress = getLevelProgress(progress.xp);
   const streakColor = getStreakColor(progress.streak_days);
@@ -295,6 +312,31 @@ export default function ProfilePage() {
             <Sparkle size={20} weight="duotone" className="text-accent-primary animate-pulse" />
             <span className="text-sm text-text-primary font-semibold flex-1 text-left">Buat Dummy Data AI</span>
           </button>
+
+          {user ? (
+            <div className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-accent-secondary/20">
+              <User size={20} weight="duotone" className="text-accent-secondary" />
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-semibold">Tersinkronisasi</p>
+                <p className="text-sm font-bold text-text-primary truncate">{user.email}</p>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="px-3 py-1.5 rounded-lg bg-accent-danger/10 text-accent-danger text-xs font-semibold active:scale-95"
+              >
+                Keluar
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              onClick={() => haptic('light')}
+              className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-accent-secondary/20 active:scale-[0.98] transition-transform"
+            >
+              <User size={20} weight="duotone" className="text-accent-secondary" />
+              <span className="text-sm text-text-primary font-semibold flex-1 text-left">Masuk Akun & Sync ☁️</span>
+            </Link>
+          )}
 
           <button
             onClick={() => {

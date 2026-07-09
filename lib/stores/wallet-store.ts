@@ -1,11 +1,13 @@
 // ============================================
-// Pundi — Wallet Store (Zustand)
+// Pundi — Wallet Store (Zustand with Sync)
 // ============================================
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Wallet, WalletType } from '@/lib/types';
 import { generateId } from '@/lib/data/presets';
+import { supabase } from '@/lib/supabase/client';
+import { useSyncStore } from '@/lib/stores/sync-store';
 
 interface WalletState {
   wallets: Wallet[];
@@ -17,9 +19,9 @@ interface WalletState {
   updateBalance: (id: string, delta: number) => void;
   getTotalBalance: () => number;
   getWalletById: (id: string) => Wallet | undefined;
+  fetchWallets: () => Promise<void>;
 }
 
-// Initialize with default wallets
 const DEFAULT_WALLETS: Wallet[] = [
   {
     id: 'wallet-cash',
@@ -76,31 +78,61 @@ export const useWalletStore = create<WalletState>()(
         set((state) => ({
           wallets: [...state.wallets, newWallet],
         }));
+
+        // Sync to Supabase queue
+        useSyncStore.getState().addToQueue({
+          table: 'wallets',
+          action: 'insert',
+          payload: newWallet,
+        });
+
         return newWallet;
       },
 
       updateWallet: (id, updates) => {
-        set((state) => ({
-          wallets: state.wallets.map((w) =>
-            w.id === id ? { ...w, ...updates, updated_at: new Date().toISOString() } : w
-          ),
-        }));
+        const updatedWallets = get().wallets.map((w) =>
+          w.id === id ? { ...w, ...updates, updated_at: new Date().toISOString() } : w
+        );
+        set({ wallets: updatedWallets });
+
+        const updatedWallet = updatedWallets.find((w) => w.id === id);
+        if (updatedWallet) {
+          useSyncStore.getState().addToQueue({
+            table: 'wallets',
+            action: 'update',
+            payload: updatedWallet,
+          });
+        }
       },
 
       deleteWallet: (id) => {
         set((state) => ({
           wallets: state.wallets.filter((w) => w.id !== id),
         }));
+
+        useSyncStore.getState().addToQueue({
+          table: 'wallets',
+          action: 'delete',
+          payload: { id },
+        });
       },
 
       updateBalance: (id, delta) => {
-        set((state) => ({
-          wallets: state.wallets.map((w) =>
-            w.id === id
-              ? { ...w, balance: w.balance + delta, updated_at: new Date().toISOString() }
-              : w
-          ),
-        }));
+        const updatedWallets = get().wallets.map((w) =>
+          w.id === id
+            ? { ...w, balance: w.balance + delta, updated_at: new Date().toISOString() }
+            : w
+        );
+        set({ wallets: updatedWallets });
+
+        const updatedWallet = updatedWallets.find((w) => w.id === id);
+        if (updatedWallet) {
+          useSyncStore.getState().addToQueue({
+            table: 'wallets',
+            action: 'update',
+            payload: updatedWallet,
+          });
+        }
       },
 
       getTotalBalance: () => {
@@ -109,6 +141,21 @@ export const useWalletStore = create<WalletState>()(
 
       getWalletById: (id) => {
         return get().wallets.find((w) => w.id === id);
+      },
+
+      fetchWallets: async () => {
+        try {
+          const { data, error } = await supabase
+            .from('wallets')
+            .select('*')
+            .order('order', { ascending: true });
+          if (error) throw error;
+          if (data && data.length > 0) {
+            set({ wallets: data as Wallet[] });
+          }
+        } catch (err) {
+          console.error('[Wallets] Failed to fetch from Supabase:', err);
+        }
       },
     }),
     {

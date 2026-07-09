@@ -1,12 +1,13 @@
 // ============================================
-// Pundi — Transaction Store (Zustand)
+// Pundi — Transaction Store (Zustand with Sync)
 // ============================================
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Transaction, TransactionType, Category } from '@/lib/types';
 import { generateId, PRESET_CATEGORIES } from '@/lib/data/presets';
-import { getToday } from '@/lib/utils/date';
+import { supabase } from '@/lib/supabase/client';
+import { useSyncStore } from '@/lib/stores/sync-store';
 
 interface TransactionState {
   transactions: Transaction[];
@@ -22,6 +23,7 @@ interface TransactionState {
   getCategoryTotals: (start: string, end: string, type: TransactionType) => { category: string; categoryId: string; color: string; icon: string; amount: number; percentage: number }[];
   getTotalByType: (type: TransactionType, start?: string, end?: string) => number;
   addCategory: (cat: Omit<Category, 'id'>) => void;
+  fetchTransactions: () => Promise<void>;
 }
 
 export const useTransactionStore = create<TransactionState>()(
@@ -41,21 +43,43 @@ export const useTransactionStore = create<TransactionState>()(
         set((state) => ({
           transactions: [newTx, ...state.transactions],
         }));
+
+        // Sync to Supabase queue
+        useSyncStore.getState().addToQueue({
+          table: 'transactions',
+          action: 'insert',
+          payload: newTx,
+        });
+
         return newTx;
       },
 
       updateTransaction: (id, updates) => {
-        set((state) => ({
-          transactions: state.transactions.map((tx) =>
-            tx.id === id ? { ...tx, ...updates, updated_at: new Date().toISOString() } : tx
-          ),
-        }));
+        const updatedTransactions = get().transactions.map((tx) =>
+          tx.id === id ? { ...tx, ...updates, updated_at: new Date().toISOString() } : tx
+        );
+        set({ transactions: updatedTransactions });
+
+        const updatedTx = updatedTransactions.find((tx) => tx.id === id);
+        if (updatedTx) {
+          useSyncStore.getState().addToQueue({
+            table: 'transactions',
+            action: 'update',
+            payload: updatedTx,
+          });
+        }
       },
 
       deleteTransaction: (id) => {
         set((state) => ({
           transactions: state.transactions.filter((tx) => tx.id !== id),
         }));
+
+        useSyncStore.getState().addToQueue({
+          table: 'transactions',
+          action: 'delete',
+          payload: { id },
+        });
       },
 
       getTransactionsByDate: (start, end) => {
@@ -126,6 +150,22 @@ export const useTransactionStore = create<TransactionState>()(
         set((state) => ({
           categories: [...state.categories, { ...cat, id: generateId() }],
         }));
+        // Note: For now custom categories stay local only to simplify schema
+      },
+
+      fetchTransactions: async () => {
+        try {
+          const { data, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .order('date', { ascending: false });
+          if (error) throw error;
+          if (data) {
+            set({ transactions: data as Transaction[] });
+          }
+        } catch (err) {
+          console.error('[Transactions] Failed to fetch from Supabase:', err);
+        }
       },
     }),
     {

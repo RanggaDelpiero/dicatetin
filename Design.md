@@ -25,6 +25,8 @@ Referensi rasa: iOS Wallet/Settings app (struktur & kredibilitas) + Duolingo (ga
 - `--bg-primary` → `#0B0B0D`, `--bg-elevated` → `#18181B`, teks disesuaikan kontras WCAG AA minimum.
 - Warna aksen tetap sama, hanya diberi sedikit boost saturasi agar tetap jelas di background gelap.
 
+> 🔴 **Aturan wajib**: teks **tidak boleh** pakai class hardcode (`text-white`, `text-black`, hex langsung). Selalu pakai token semantik (`--text-primary`, `--text-secondary`, dan tambahkan `--text-on-accent` untuk teks di atas background solid berwarna seperti wallet card/category chip). Ini untuk mencegah bug seperti teks yang jadi tak terlihat di list transaksi — kemungkinan besar penyebabnya adalah class warna teks yang di-hardcode dan tidak beradaptasi ke background/tema yang berbeda.
+
 ### Tipografi
 - Font stack: `-apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif` — supaya otomatis pakai SF Pro asli di iOS tanpa perlu embed font (menghormati lisensi Apple).
 - Scale: Caption 12px, Body 15px, Body Emphasis 17px (setara iOS default), Title 22px, Large Title 34px (dipakai di header dashboard, ala native iOS large title yang collapse saat scroll).
@@ -49,6 +51,9 @@ Referensi rasa: iOS Wallet/Settings app (struktur & kredibilitas) + Duolingo (ga
 - **Segmented Control**: dipakai untuk switch periode (Minggu/Bulan/Custom) di dashboard — pola native iOS.
 - **Progress Ring**: dipakai untuk XP menuju level berikutnya dan progress pelunasan hutang.
 - **Bottom Sheet Form**: form tambah transaksi/hutang/split bill, drag handle di atas, tombol submit besar full-width di bawah (thumb-friendly).
+- **🆕 Budget Harian Card (hero dashboard)**: elemen visual PALING besar/menonjol di Dashboard, di atas semua elemen lain. Berisi: label "Budget Harian", nominal terpakai vs total (misal "Rp85.000 / Rp150.000"), progress bar horizontal dengan warna status (hijau/kuning/merah — reuse `--accent-primary/--accent-warning/--accent-danger`), dan teks kecil sisa per kategori di bawahnya (tappable untuk expand ke breakdown per kategori). Tap card ini membuka halaman `budget` untuk kelola budget bulanan.
+- **🆕 Capture Buttons (foto & suara)**: dua tombol bulat kecil (ikon kamera & mic, Phosphor duotone) di header Add Transaction sheet & Split Bill flow, berdampingan dengan toggle income/expense. Mic button punya 3 state visual: idle (outline), recording (pulsing red dot + mini waveform animasi), processing (spinner kecil menggantikan ikon).
+- **🆕 Extraction Review Sheet**: bottom sheet yang muncul setelah AI selesai ekstrak foto/suara — banner kecil di atas form bertuliskan *"Diekstrak otomatis — cek dulu ya sebelum simpan 🧐"*, field-field sama seperti form manual tapi sudah terisi, field dengan confidence rendah dari AI diberi border warning (`--accent-warning`) dan ikon kecil "⚠️ cek lagi".
 
 ## 5. Sistem Visual Gamifikasi
 
@@ -67,6 +72,7 @@ Referensi rasa: iOS Wallet/Settings app (struktur & kredibilitas) + Duolingo (ga
   - Success pattern (double-pulse) → transaksi berhasil tersimpan, hutang lunas.
 - **Pull-to-refresh** di halaman dashboard & transaksi.
 - **Swipe-to-delete/edit** di list item (pola native iOS, bukan tombol edit terpisah).
+- **🆕 Loading state ekstraksi AI**: skeleton/shimmer di area form + mascot Pundi kecil dengan animasi "membaca" (misal pakai kaca pembesar), micro-copy playful bergantian seperti *"Pundi lagi baca struk..."* atau *"Nerjemahin omongan kamu..."* — durasi biasanya singkat (beberapa detik), jadi animasi harus terasa ringan, bukan bikin nunggu berasa lama.
 
 ## 7. Ikonografi
 
@@ -82,9 +88,9 @@ Referensi rasa: iOS Wallet/Settings app (struktur & kredibilitas) + Duolingo (ga
 
 ## 9. Contoh Layar Kunci (Deskripsi)
 
-1. **Dashboard**: Large title "Halo, Rangga 👋" collapse saat scroll, di bawahnya kartu saldo total (swipeable antar kantong), chart donat kategori pengeluaran, section "Highlight Minggu Ini" (card carousel), streak flame di pojok kanan atas.
-2. **Tambah Transaksi (bottom sheet)**: keypad angka besar di tengah, pilihan kategori berupa scrollable row ikon bulat, toggle income/expense di atas, tombol simpan full-width hijau.
+1. **Dashboard [Update IA]**: urutan dari atas ke bawah sekarang: (1) header ringkas "Halo, Rangga 👋" + streak flame di pojok kanan, (2) **Budget Harian Card sebagai hero pertama** (lihat komponen §4), (3) kartu saldo total (swipeable antar kantong) + Net Worth kecil di sampingnya, (4) chart donat kategori pengeluaran, (5) section "Highlight Minggu Ini" (card carousel). Perubahan ini sengaja menggeser fokus dari "berapa saldo saya" menjadi "berapa yang boleh saya keluarkan hari ini" — lebih actionable buat kebiasaan harian.
+2. **Tambah Transaksi (bottom sheet)**: keypad angka besar di tengah, pilihan kategori berupa scrollable row ikon bulat, toggle income/expense di atas, **🆕 tombol kamera & mic di pojok kanan atas form** (tap kamera → pilih foto/ambil foto; tap mic → mulai rekam), tombol simpan full-width hijau.
 3. **Wallets**: horizontal scroll kartu kantong dengan warna berbeda, tombol "+ Tambah Kantong" di ujung.
-4. **Hutang & Split Bill**: dua tab (Hutang Saya / Hutang Orang), tiap item pakai progress bar pelunasan; split bill punya flow terpisah — pilih peserta, input item/nominal, preview hasil split sebelum share.
+4. **Hutang & Split Bill**: dua tab (Hutang Saya / Hutang Orang), tiap item pakai progress bar pelunasan; split bill punya flow terpisah — pilih peserta, **🆕 opsi "Scan Struk" di langkah awal (foto bill → item otomatis terisi) atau ketik manual**, input item/nominal, preview hasil split sebelum share.
 5. **Achievement/Profil**: avatar mascot Pundi di tengah dengan XP ring, badge shelf di bawahnya, riwayat streak dalam bentuk kalender mini (mirip GitHub contribution graph tapi bulat-bulat).
 6. **AI Advisor (chat)**: bubble chat dengan avatar mascot Pundi sebagai "AI", quick-reply suggestion chips di atas keyboard (misal "Analisa bulan ini", "Saran hemat"), disclaimer kecil di bawah header bahwa ini bukan nasihat finansial profesional.
