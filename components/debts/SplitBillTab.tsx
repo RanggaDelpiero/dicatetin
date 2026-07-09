@@ -15,6 +15,7 @@ import { formatCurrency } from '@/lib/utils/currency';
 import { formatDate } from '@/lib/utils/date';
 import { haptic } from '@/lib/utils/haptic';
 import { XP_REWARDS } from '@/lib/gamification/xp';
+import { compressImage } from '@/lib/utils/image';
 
 export function SplitBillTab() {
   const { sessions, addSession, deleteSession, markParticipantPaid } = useSplitBillStore();
@@ -41,7 +42,8 @@ export function SplitBillTab() {
     const reader = new FileReader();
     reader.onloadend = async () => {
       try {
-        const base64String = reader.result as string;
+        const rawBase64 = reader.result as string;
+        const compressedBase64 = await compressImage(rawBase64);
         const res = await fetch('/api/extract', {
           method: 'POST',
           headers: {
@@ -49,7 +51,7 @@ export function SplitBillTab() {
           },
           body: JSON.stringify({
             type: 'photo',
-            image: base64String,
+            image: compressedBase64,
             mode: 'split',
           }),
         });

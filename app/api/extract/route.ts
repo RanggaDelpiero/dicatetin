@@ -70,9 +70,6 @@ PENTING: Jangan tambahkan kata pengantar, hanya output-kan JSON mentah yang vali
     let messages: any[] = [];
 
     if (type === 'photo') {
-      // Clean base64 header if present
-      const base64Data = image!.replace(/^data:image\/\w+;base64,/, '');
-
       messages = [
         {
           role: 'user',
@@ -84,7 +81,7 @@ PENTING: Jangan tambahkan kata pengantar, hanya output-kan JSON mentah yang vali
             {
               type: 'image_url',
               image_url: {
-                url: `data:image/jpeg;base64,${base64Data}`,
+                url: image, // Pass the original data URL directly (retains correct MIME type and encoding)
               },
             },
           ],

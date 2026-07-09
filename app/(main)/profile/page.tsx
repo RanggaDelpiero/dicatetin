@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Moon, Sun, SignOut, Trash, Info, Sparkle, User } from '@phosphor-icons/react';
+import { Moon, Sun, SignOut, Trash, Info, Sparkle, User, ArrowsClockwise } from '@phosphor-icons/react';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
@@ -337,6 +337,15 @@ export default function ProfilePage() {
               <span className="text-sm text-text-primary font-semibold flex-1 text-left">Masuk Akun & Sync ☁️</span>
             </Link>
           )}
+
+          <Link
+            href="/transactions/recurring"
+            onClick={() => haptic('light')}
+            className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-transform"
+          >
+            <ArrowsClockwise size={20} weight="duotone" className="text-accent-secondary" />
+            <span className="text-sm text-text-primary font-semibold flex-1 text-left">Transaksi Berulang (Langganan)</span>
+          </Link>
 
           <button
             onClick={() => {

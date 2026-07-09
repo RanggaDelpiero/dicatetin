@@ -19,6 +19,7 @@ import { useGamificationStore } from '@/lib/stores/gamification-store';
 import { useBudgetStore } from '@/lib/stores/budget-store';
 import { useDebtStore } from '@/lib/stores/debt-store';
 import { useReceivableStore } from '@/lib/stores/receivable-store';
+import { useRecurringStore } from '@/lib/stores/recurring-store';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/currency';
 import { getCurrentMonthRange, getMonthName, formatRelativeDate } from '@/lib/utils/date';
 import { getLevelProgress, getLevelTitle } from '@/lib/gamification/xp';
@@ -31,6 +32,11 @@ export default function DashboardPage() {
   const { transactions, getCategoryTotals, getTotalByType } = useTransactionStore();
   const { wallets, getTotalBalance } = useWalletStore();
   const { progress } = useGamificationStore();
+  const { checkAndTriggerRecurring } = useRecurringStore();
+
+  useEffect(() => {
+    checkAndTriggerRecurring();
+  }, [checkAndTriggerRecurring]);
 
   const [showBudgetSheet, setShowBudgetSheet] = useState(false);
 
