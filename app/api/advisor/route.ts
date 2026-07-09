@@ -8,7 +8,7 @@
 import { NextRequest } from 'next/server';
 import { ADVISOR_SYSTEM_PROMPT } from '@/lib/ai/context';
 
-const BASE_URL = process.env.AI_ADVISOR_BASE_URL || 'https://openagentic.id/api/v1';
+const BASE_URL = process.env.AI_ADVISOR_BASE_URL || 'https://aimurah.my.id/api/v1';
 const API_KEY = process.env.AI_ADVISOR_API_KEY || '';
 const MODEL = process.env.AI_ADVISOR_MODEL || 'claude-sonnet-4.5';
 

@@ -4,7 +4,7 @@
 
 import { NextRequest } from 'next/server';
 
-const BASE_URL = process.env.AI_ADVISOR_BASE_URL || 'https://openagentic.id/api/v1';
+const BASE_URL = process.env.AI_ADVISOR_BASE_URL || 'https://aimurah.my.id/api/v1';
 const API_KEY = process.env.AI_ADVISOR_API_KEY || '';
 const MODEL = process.env.AI_ADVISOR_MODEL || 'claude-sonnet-4.5';
 
@@ -126,7 +126,36 @@ Kembalikan format JSON saja.`,
     }
 
     const resData = await response.json();
-    let reply = resData.choices?.[0]?.message?.content || '';
+
+    // Check for API errors returned inside the payload (some proxies do this on 200 OK)
+    if (resData.error) {
+      console.error('[AI Extract] Proxy error payload:', resData.error);
+      return Response.json(
+        { error: typeof resData.error === 'string' ? resData.error : (resData.error.message || 'Error dari provider AI.') },
+        { status: 500 }
+      );
+    }
+
+    let reply = '';
+    // OpenAI-compatible format
+    if (resData.choices && resData.choices[0]?.message?.content) {
+      reply = resData.choices[0].message.content;
+    }
+    // Anthropic /v1/messages format
+    else if (resData.content && Array.isArray(resData.content)) {
+      reply = resData.content
+        .filter((block: any) => block.type === 'text')
+        .map((block: any) => block.text)
+        .join('');
+    }
+
+    if (!reply) {
+      console.error('[AI Extract] Empty content returned. Full response:', resData);
+      return Response.json(
+        { error: 'AI tidak mengembalikan respon. Silakan periksa limit/saldo API Anda.' },
+        { status: 500 }
+      );
+    }
 
     // Robust extraction helper to extract the first JSON object block
     let cleanReply = reply.trim();
