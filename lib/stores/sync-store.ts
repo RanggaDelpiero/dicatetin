@@ -11,6 +11,7 @@ export interface QueueItem {
   id: string;
   table: 'wallets' | 'transactions' | 'debts' | 'receivables' | 'receivable_payments' | 'split_bill_sessions' | 'split_participants' | 'profiles';
   action: 'insert' | 'update' | 'delete' | 'upsert';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any;
   timestamp: string;
 }
@@ -77,42 +78,80 @@ export const useSyncStore = create<SyncState>()(
         const queue = [...get().syncQueue];
         const failedItems: QueueItem[] = [];
 
+        // Group adjacent items with same table and action to batch inserts/upserts
+        const batches: { table: QueueItem['table']; action: QueueItem['action']; items: QueueItem[] }[] = [];
+        let currentBatch: { table: QueueItem['table']; action: QueueItem['action']; items: QueueItem[] } | null = null;
+
         for (const item of queue) {
-          try {
-            // Bind user_id to payload if user is authenticated
-            const payload: any = {
-              ...item.payload,
-              user_id: session.user.id,
+          if (
+            currentBatch &&
+            currentBatch.table === item.table &&
+            currentBatch.action === item.action &&
+            (item.action === 'insert' || item.action === 'upsert')
+          ) {
+            currentBatch.items.push(item);
+          } else {
+            if (currentBatch) batches.push(currentBatch);
+            currentBatch = {
+              table: item.table,
+              action: item.action,
+              items: [item],
             };
+          }
+        }
+        if (currentBatch) batches.push(currentBatch);
 
-            // Remove relations that should not be sent directly (nested objects)
-            if (payload.category) delete payload.category;
-            if (payload.wallet) delete payload.wallet;
-            if (payload.target_wallet) delete payload.target_wallet;
+        for (const batch of batches) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const payloads: any[] = batch.items.map((item) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const payload: any = {
+                ...item.payload,
+                user_id: session.user.id,
+              };
 
-            if (item.action === 'insert' || item.action === 'upsert') {
+              // Remove relations that should not be sent directly (nested objects)
+              if (payload.category) delete payload.category;
+              if (payload.wallet) delete payload.wallet;
+              if (payload.target_wallet) delete payload.target_wallet;
+
+              return payload;
+            });
+
+            if (batch.action === 'insert' || batch.action === 'upsert') {
               const { error } = await supabase
-                .from(item.table)
-                .upsert(payload);
+                .from(batch.table)
+                .upsert(payloads);
               if (error) throw error;
-            } 
-            else if (item.action === 'update') {
-              const { error } = await supabase
-                .from(item.table)
-                .update(payload)
-                .eq('id', payload.id);
-              if (error) throw error;
-            } 
-            else if (item.action === 'delete') {
-              const { error } = await supabase
-                .from(item.table)
-                .delete()
-                .eq('id', payload.id);
-              if (error) throw error;
+            } else {
+              // For update and delete, process sequentially within the batch to ensure proper failure handling
+              for (let i = 0; i < batch.items.length; i++) {
+                const item = batch.items[i];
+                const payload = payloads[i];
+                try {
+                  if (item.action === 'update') {
+                    const { error } = await supabase
+                      .from(item.table)
+                      .update(payload)
+                      .eq('id', payload.id);
+                    if (error) throw error;
+                  } else if (item.action === 'delete') {
+                    const { error } = await supabase
+                      .from(item.table)
+                      .delete()
+                      .eq('id', payload.id);
+                    if (error) throw error;
+                  }
+                } catch (err) {
+                  console.error(`[Sync] Failed to process ${item.action} on ${item.table}:`, err);
+                  failedItems.push(item);
+                }
+              }
             }
           } catch (err) {
-            console.error(`[Sync] Failed to process ${item.action} on ${item.table}:`, err);
-            failedItems.push(item);
+            console.error(`[Sync] Failed to process batch ${batch.action} on ${batch.table}:`, err);
+            failedItems.push(...batch.items);
           }
         }
 

@@ -69,8 +69,8 @@ export const useRecurringStore = create<RecurringState>()(
         const updatedList = recurringList.map((item) => {
           if (item.status !== 'active') return item;
 
-          let nextDueDate = new Date(item.next_due_date);
-          let itemUpdated = { ...item };
+          const nextDueDate = new Date(item.next_due_date);
+          const itemUpdated = { ...item };
 
           // Keep triggering if the due date is in the past or today
           while (itemUpdated.next_due_date <= todayStr && itemUpdated.status === 'active') {
