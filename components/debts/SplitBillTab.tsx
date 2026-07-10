@@ -7,6 +7,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+// Camera is actively used on line 614, so it is not an unused import
 import {
   Plus, Trash, CheckCircle, UsersThree, X, Camera, Microphone,
   ShoppingCart, User, Receipt
