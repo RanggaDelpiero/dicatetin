@@ -90,5 +90,5 @@ export function getLevelTitle(level: number): string {
     'Platinum Planner',      // 14
     'Diamond Legend',        // 15
   ];
-  return titles[Math.min(level - 1, titles.length - 1)];
+  return titles[Math.max(0, Math.min(level - 1, titles.length - 1))];
 }
