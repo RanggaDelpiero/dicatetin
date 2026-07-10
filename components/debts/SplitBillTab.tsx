@@ -475,6 +475,7 @@ export function SplitBillTab() {
                     if (confirm(`Hapus split bill "${session.title}"?`)) deleteSession(session.id);
                   }}
                   className="p-1.5 rounded-lg hover:bg-bg-secondary"
+                  aria-label={`Hapus split bill ${session.title}`}
                 >
                   <Trash size={16} className="text-text-tertiary" />
                 </button>

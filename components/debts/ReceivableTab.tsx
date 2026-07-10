@@ -127,6 +127,7 @@ export function ReceivableTab() {
                       if (confirm(`Hapus piutang "${rec.debtor}"?`)) deleteReceivable(rec.id);
                     }}
                     className="p-1.5 rounded-lg hover:bg-bg-secondary"
+                    aria-label={`Hapus piutang dari ${rec.debtor}`}
                   >
                     <Trash size={16} className="text-text-tertiary" />
                   </button>
