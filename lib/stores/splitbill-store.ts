@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { SplitBillSession, SplitParticipant, SplitMethod } from '@/lib/types';
+import { SplitBillSession, SplitBillItem, SplitParticipant, SplitMethod } from '@/lib/types';
 import { generateId } from '@/lib/data/presets';
 
 interface SplitBillState {
@@ -15,6 +15,8 @@ interface SplitBillState {
     total_amount: number;
     method: SplitMethod;
     participantNames: string[];
+    items?: SplitBillItem[];
+    paidBy: string;
     customAmounts?: Record<string, number>;
   }) => SplitBillSession;
   deleteSession: (id: string) => void;
@@ -22,20 +24,63 @@ interface SplitBillState {
   getSession: (id: string) => SplitBillSession | undefined;
 }
 
+/**
+ * Calculate each participant's share based on items assigned to them.
+ * If an item is assigned to multiple people, the cost is split equally among them.
+ */
+function calculatePerItemAmounts(
+  items: SplitBillItem[],
+  participantNames: string[]
+): Record<string, number> {
+  const amounts: Record<string, number> = {};
+  participantNames.forEach((name) => {
+    amounts[name] = 0;
+  });
+
+  items.forEach((item) => {
+    if (item.assignedTo.length === 0) return;
+    const itemTotal = item.price * item.qty;
+    const perPerson = Math.round(itemTotal / item.assignedTo.length);
+    item.assignedTo.forEach((name) => {
+      if (amounts[name] !== undefined) {
+        amounts[name] += perPerson;
+      }
+    });
+  });
+
+  return amounts;
+}
+
 export const useSplitBillStore = create<SplitBillState>()(
   persist(
     (set, get) => ({
       sessions: [],
 
-      addSession: ({ title, total_amount, method, participantNames, customAmounts }) => {
+      addSession: ({ title, total_amount, method, participantNames, items = [], paidBy, customAmounts }) => {
         const sessionId = generateId();
-        const perPerson = Math.ceil(total_amount / participantNames.length);
+
+        // Calculate per-person amounts based on method
+        let perPersonAmounts: Record<string, number> = {};
+
+        if (method === 'per-item' && items.length > 0) {
+          perPersonAmounts = calculatePerItemAmounts(items, participantNames);
+        } else if (method === 'custom' && customAmounts) {
+          participantNames.forEach((name) => {
+            perPersonAmounts[name] = customAmounts[name] || 0;
+          });
+        } else {
+          // equal split
+          const perPerson = Math.ceil(total_amount / participantNames.length);
+          participantNames.forEach((name) => {
+            perPersonAmounts[name] = perPerson;
+          });
+        }
 
         const participants: SplitParticipant[] = participantNames.map((name) => ({
           id: generateId(),
           session_id: sessionId,
           name,
-          amount: method === 'custom' && customAmounts?.[name] ? customAmounts[name] : perPerson,
+          amount: perPersonAmounts[name] || 0,
           status: 'unpaid' as const,
         }));
 
@@ -46,6 +91,8 @@ export const useSplitBillStore = create<SplitBillState>()(
           total_amount,
           method,
           participants,
+          items,
+          paidBy,
           created_at: new Date().toISOString(),
         };
 

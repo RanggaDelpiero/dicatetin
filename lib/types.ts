@@ -95,8 +95,16 @@ export interface ReceivablePayment {
 }
 
 // ---- Split Bill ----
-export type SplitMethod = 'equal' | 'custom' | 'percentage';
+export type SplitMethod = 'equal' | 'custom' | 'percentage' | 'per-item';
 export type SplitParticipantStatus = 'unpaid' | 'paid';
+
+export interface SplitBillItem {
+  id: string;
+  name: string;
+  price: number;
+  qty: number;
+  assignedTo: string[]; // participant names who ordered this item
+}
 
 export interface SplitBillSession {
   id: string;
@@ -105,6 +113,8 @@ export interface SplitBillSession {
   total_amount: number;
   method: SplitMethod;
   participants: SplitParticipant[];
+  items: SplitBillItem[];      // list of items/menu in the bill
+  paidBy: string;              // name of person who paid ("Saya" or participant name)
   created_at: string;
 }
 
