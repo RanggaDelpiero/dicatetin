@@ -22,9 +22,10 @@ import type { TransactionType } from '@/lib/types';
 interface AddTransactionSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  editTransactionId?: string;
 }
 
-export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProps) {
+export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddTransactionSheetProps) {
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('0');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
@@ -80,10 +81,11 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
             if (cat) setSelectedCategoryId(cat.id);
           }
         }
-      } catch (err: any) {
-        console.error(err);
+      } catch (err: unknown) {
+        const error = err as Error;
+        console.error(error);
         haptic('error');
-        alert(err.message || 'Gagal mengekstrak bill dari foto.');
+        alert(error.message || 'Gagal mengekstrak bill dari foto.');
       } finally {
         setIsAiExtracting(false);
       }
@@ -94,6 +96,7 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
   const handleVoiceRecord = () => {
     haptic('medium');
     const SpeechRecognition =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
@@ -110,6 +113,7 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
       setIsRecording(true);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = async (event: any) => {
       const transcript = event.results[0][0].transcript;
       setIsRecording(false);
@@ -149,15 +153,17 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
             if (cat) setSelectedCategoryId(cat.id);
           }
         }
-      } catch (err: any) {
-        console.error(err);
+      } catch (err: unknown) {
+        const error = err as Error;
+        console.error(error);
         haptic('error');
-        alert(err.message || 'AI gagal memahami catatan suaramu.');
+        alert(error.message || 'AI gagal memahami catatan suaramu.');
       } finally {
         setIsAiExtracting(false);
       }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onerror = (event: any) => {
       console.error(event);
       setIsRecording(false);
@@ -171,9 +177,43 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
     recognition.start();
   };
 
-  const { addTransaction, categories } = useTransactionStore();
+  const { addTransaction, updateTransaction, transactions, categories } = useTransactionStore();
   const { wallets, updateBalance } = useWalletStore();
   const { addXP, recordActivity } = useGamificationStore();
+
+  // Load existing transaction if editing
+  React.useEffect(() => {
+    if (isOpen && editTransactionId) {
+      const existingTx = transactions.find(t => t.id === editTransactionId);
+      if (existingTx) {
+        // Schedule state updates to prevent "synchronous setState in effect" lint error when rendered from layout
+        const timer = setTimeout(() => {
+          setType(existingTx.type);
+          setAmount(existingTx.amount.toString());
+          setSelectedCategoryId(existingTx.category_id);
+          setSelectedWalletId(existingTx.wallet_id);
+          setDate(existingTx.date.split('T')[0]);
+          if (existingTx.note) {
+            setNote(existingTx.note);
+            setShowNote(true);
+          }
+        }, 50);
+        return () => clearTimeout(timer);
+      }
+    } else if (isOpen && !editTransactionId) {
+      // Reset form on open
+      const timer = setTimeout(() => {
+        setType('expense');
+        setAmount('0');
+        setNote('');
+        setDate(getToday());
+        setShowNote(false);
+        setSelectedCategoryId('');
+        setSelectedWalletId('');
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, editTransactionId, transactions]);
 
   const filteredCategories = useMemo(
     () => categories.filter((c) => c.type === type),
@@ -182,17 +222,19 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
 
   // Auto-select first category
   React.useEffect(() => {
-    if (filteredCategories.length > 0 && !selectedCategoryId) {
-      setSelectedCategoryId(filteredCategories[0].id);
+    if (filteredCategories.length > 0 && !selectedCategoryId && !editTransactionId) {
+      const timer = setTimeout(() => setSelectedCategoryId(filteredCategories[0].id), 50);
+      return () => clearTimeout(timer);
     }
-  }, [filteredCategories, selectedCategoryId]);
+  }, [filteredCategories, selectedCategoryId, editTransactionId]);
 
   // Auto-select first wallet
   React.useEffect(() => {
-    if (wallets.length > 0 && !selectedWalletId) {
-      setSelectedWalletId(wallets[0].id);
+    if (wallets.length > 0 && !selectedWalletId && !editTransactionId) {
+      const timer = setTimeout(() => setSelectedWalletId(wallets[0].id), 50);
+      return () => clearTimeout(timer);
     }
-  }, [wallets, selectedWalletId]);
+  }, [wallets, selectedWalletId, editTransactionId]);
 
   const handleKeyPress = (key: string) => {
     haptic('light');
@@ -218,22 +260,43 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
 
     haptic('success');
 
-    // Add transaction
-    addTransaction({
-      type,
-      amount: numAmount,
-      category_id: selectedCategoryId,
-      wallet_id: selectedWalletId,
-      date,
-      note: note || undefined,
-    });
+    if (editTransactionId) {
+      const existingTx = transactions.find(t => t.id === editTransactionId);
+      if (existingTx) {
+        // Reverse previous balance effect
+        updateBalance(existingTx.wallet_id, existingTx.type === 'income' ? -existingTx.amount : existingTx.amount);
 
-    // Update wallet balance
-    updateBalance(selectedWalletId, type === 'income' ? numAmount : -numAmount);
+        // Update transaction
+        updateTransaction(editTransactionId, {
+          type,
+          amount: numAmount,
+          category_id: selectedCategoryId,
+          wallet_id: selectedWalletId,
+          date,
+          note: note || undefined,
+        });
 
-    // Gamification
+        // Apply new balance effect
+        updateBalance(selectedWalletId, type === 'income' ? numAmount : -numAmount);
+      }
+    } else {
+      // Add transaction
+      addTransaction({
+        type,
+        amount: numAmount,
+        category_id: selectedCategoryId,
+        wallet_id: selectedWalletId,
+        date,
+        note: note || undefined,
+      });
+
+      // Update wallet balance
+      updateBalance(selectedWalletId, type === 'income' ? numAmount : -numAmount);
+
+      // Gamification
     addXP(XP_REWARDS.ADD_TRANSACTION);
-    recordActivity();
+      recordActivity();
+    }
 
     // Reset form
     setAmount('0');
@@ -253,6 +316,13 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} fullHeight>
       <div className="flex flex-col h-full px-5 pt-2 pb-safe">
+        {/* Header Title (optional visual hint for edit mode) */}
+        {editTransactionId && (
+          <div className="mb-2 text-center text-sm font-semibold text-text-secondary">
+            Mengedit Transaksi
+          </div>
+        )}
+
         {/* Type Toggle */}
         <div className="flex gap-2 p-1 rounded-xl bg-bg-secondary mb-4">
           <button
@@ -452,7 +522,9 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
           }`}
           style={{ marginBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}
         >
-          {type === 'income' ? '💰 Simpan Pemasukan' : '💸 Simpan Pengeluaran'}
+          {editTransactionId
+            ? '💾 Update Transaksi'
+            : (type === 'income' ? '💰 Simpan Pemasukan' : '💸 Simpan Pengeluaran')}
         </button>
       </div>
     </BottomSheet>
