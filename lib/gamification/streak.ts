@@ -3,19 +3,6 @@
 // ============================================
 
 /**
- * Calculate if streak is still active based on last activity date
- * Streak breaks if user misses an entire day
- */
-export function isStreakActive(lastActivityDate: string): boolean {
-  const last = new Date(lastActivityDate);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate());
-  const diffDays = Math.round((today.getTime() - lastDay.getTime()) / (1000 * 60 * 60 * 24));
-  return diffDays <= 1;
-}
-
-/**
  * Check if user already logged activity today
  */
 export function hasLoggedToday(lastActivityDate: string): boolean {
@@ -34,7 +21,15 @@ export function hasLoggedToday(lastActivityDate: string): boolean {
 export function calculateStreak(currentStreak: number, lastActivityDate: string): number {
   if (!lastActivityDate) return 1;
   if (hasLoggedToday(lastActivityDate)) return currentStreak;
-  if (isStreakActive(lastActivityDate)) return currentStreak + 1;
+
+  const last = new Date(lastActivityDate);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+  const diffDays = Math.round((today.getTime() - lastDay.getTime()) / (1000 * 60 * 60 * 24));
+  const isActive = diffDays <= 1;
+
+  if (isActive) return currentStreak + 1;
   return 1; // Reset streak
 }
 
