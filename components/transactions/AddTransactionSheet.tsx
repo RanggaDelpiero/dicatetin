@@ -231,7 +231,6 @@ export function AddTransactionSheet({ isOpen, onClose }: AddTransactionSheetProp
     // Update wallet balance
     updateBalance(selectedWalletId, type === 'income' ? numAmount : -numAmount);
 
-    // Gamification
     addXP(XP_REWARDS.ADD_TRANSACTION);
     recordActivity();
 
