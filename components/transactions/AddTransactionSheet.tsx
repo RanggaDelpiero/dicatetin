@@ -6,7 +6,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Backspace, CalendarBlank, Notebook, ArrowUp, ArrowDown, Camera, Microphone } from '@phosphor-icons/react';
+import { Backspace, CalendarBlank, Notebook, ArrowUp, ArrowDown } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
