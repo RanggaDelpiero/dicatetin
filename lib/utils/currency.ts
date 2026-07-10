@@ -51,14 +51,6 @@ export function parseCurrencyInput(input: string): number {
 }
 
 /**
- * Format a signed amount with +/- prefix
- */
-export function formatSignedCurrency(amount: number): string {
-  const prefix = amount >= 0 ? '+' : '';
-  return prefix + formatCurrency(amount);
-}
-
-/**
  * Calculate percentage
  */
 export function calcPercentage(part: number, total: number): number {
