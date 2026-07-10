@@ -3,6 +3,7 @@
 // ============================================
 
 import { NextRequest } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 const BASE_URL = process.env.AI_ADVISOR_BASE_URL || 'https://aimurah.my.id/api/v1';
 const API_KEY = process.env.AI_ADVISOR_API_KEY || '';
@@ -140,6 +141,13 @@ async function callAI(
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     if (!API_KEY) {
       return Response.json(
         { error: 'AI extractor belum dikonfigurasi. Hubungi admin.' },
