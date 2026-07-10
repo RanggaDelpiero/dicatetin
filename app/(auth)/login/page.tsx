@@ -68,17 +68,22 @@ export default function LoginPage() {
   return (
     <div className="flex-1 flex flex-col justify-center px-6 py-12 bg-bg-primary min-h-screen">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        {/* Mascot */}
+        {/* Mascot / Logo Image */}
         <motion.div
-          className="text-7xl mb-4 inline-block"
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          className="mb-4 inline-block"
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         >
-          🐷
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-icon.png"
+            alt="DicatetinAja Logo"
+            className="w-20 h-20 mx-auto rounded-2xl shadow-md object-contain"
+          />
         </motion.div>
 
         <h2 className="text-3xl font-extrabold tracking-tight text-text-primary">
-          Pundi Finance
+          DicatetinAja
         </h2>
         <p className="mt-2 text-sm text-text-secondary">
           Nyatet duit rasanya kayak main, bukan kerjaan.

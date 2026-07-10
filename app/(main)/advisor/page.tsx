@@ -131,7 +131,7 @@ Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, ta
   // Initial welcome message
   useEffect(() => {
     if (messages.length === 0) {
-      addAssistantMessage('Halo Rangga! Aku Pundi AI 🐷, asisten keuangan pribadimu. Ada yang bisa kubantu hari ini? Kamu bisa tanya tentang kondisi kantongmu, pengeluaran bulan ini, atau tips hemat!');
+      addAssistantMessage('Halo Rangga! Aku DicatetinAja AI 🤖, asisten keuangan pribadimu. Ada yang bisa kubantu hari ini? Kamu bisa tanya tentang kondisi kantongmu, pengeluaran bulan ini, atau tips hemat!');
     }
   }, [messages, addAssistantMessage]);
 
@@ -217,7 +217,7 @@ Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, ta
       }
     } catch (err: any) {
       console.error(err);
-      addAssistantMessage(err.message || 'Duh, koneksi ke otak Pundi terputus. Coba kirim pesan lagi ya! 🔌');
+      addAssistantMessage(err.message || 'Duh, koneksi ke otak DicatetinAja terputus. Coba kirim pesan lagi ya! 🔌');
     } finally {
       setLoading(false);
     }
@@ -290,10 +290,10 @@ Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, ta
             <div className="flex flex-col items-center justify-center py-32 text-center space-y-4">
               <div className="relative w-16 h-16 flex items-center justify-center">
                 <span className="absolute inset-0 rounded-full border-4 border-accent-secondary/20 border-t-accent-secondary animate-spin" />
-                <span className="text-2xl">🐷</span>
+                <span className="text-2xl">🤖</span>
               </div>
               <div>
-                <h3 className="font-bold text-text-primary">Pundi AI Sedang Berpikir...</h3>
+                <h3 className="font-bold text-text-primary">DicatetinAja AI Sedang Berpikir...</h3>
                 <p className="text-xs text-text-tertiary mt-1 animate-pulse">Membaca transaksi, anggaran & kewajibanmu...</p>
               </div>
             </div>
@@ -303,7 +303,7 @@ Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, ta
               <div>
                 <h3 className="text-lg font-bold text-text-primary">Analisis Keuangan AI</h3>
                 <p className="text-xs text-text-tertiary max-w-[260px] mx-auto leading-relaxed mt-1">
-                  Dapatkan skor kesehatan keuangan, ulasan posisi dana, grafik, serta rekomendasi hemat cerdas dari Pundi AI.
+                  Dapatkan skor kesehatan keuangan, ulasan posisi dana, grafik, serta rekomendasi hemat cerdas dari DicatetinAja AI.
                 </p>
               </div>
               <button
@@ -550,8 +550,8 @@ Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, ta
               </div>
 
               {/* Disclaimer */}
-              <p className="text-[10px] text-text-tertiary text-center leading-normal pt-4">
-                💡 Pundi AI memberi analisis berdasarkan riwayat keuangan Anda. Ini bukan nasihat keuangan profesional.
+              <p className="text-text-tertiary text-center leading-normal pt-4 text-[10px]">
+                💡 DicatetinAja AI memberi analisis berdasarkan riwayat keuangan Anda. Ini bukan nasihat keuangan profesional.
               </p>
             </>
           )}
@@ -577,7 +577,7 @@ Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, ta
                         : 'bg-bg-elevated text-text-primary rounded-tl-[4px] border border-border-light'
                     }`}
                   >
-                    {!isUser && <span className="text-xs text-text-tertiary block mb-1">Pundi</span>}
+                    {!isUser && <span className="text-xs text-text-tertiary block mb-1">DicatetinAja AI</span>}
                     <p className="whitespace-pre-line">{msg.content}</p>
                   </div>
                 </div>
@@ -634,7 +634,7 @@ Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, ta
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
-                placeholder="Tanya Pundi AI..."
+                placeholder="Tanya DicatetinAja AI..."
                 disabled={isLoading}
                 className="flex-1 bg-bg-elevated border border-border-light rounded-2xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-tertiary outline-none shadow-sm focus:border-accent-secondary transition-colors"
               />
@@ -652,8 +652,8 @@ Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, ta
             </div>
 
             {/* Disclaimer */}
-            <p className="text-[10px] text-text-tertiary text-center mt-3 leading-normal">
-              💡 Pundi AI memberi saran berdasarkan catatanmu. Ini bukan nasihat keuangan profesional.
+            <p className="text-text-tertiary text-center mt-3 leading-normal text-[10px]">
+              💡 DicatetinAja AI memberi saran berdasarkan catatanmu. Ini bukan nasihat keuangan profesional.
             </p>
           </div>
         </>

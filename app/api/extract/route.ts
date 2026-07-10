@@ -5,9 +5,9 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-const BASE_URL = process.env.AI_ADVISOR_BASE_URL || 'https://aimurah.my.id/api/v1';
-const API_KEY = process.env.AI_ADVISOR_API_KEY || '';
-const MODEL = process.env.AI_ADVISOR_MODEL || 'claude-sonnet-4.5';
+const BASE_URL = process.env.AI_EXTRACT_BASE_URL || 'https://rxmcvp2.abc-tunnel.us/v1';
+const API_KEY = process.env.AI_EXTRACT_API_KEY || '';
+const MODEL = process.env.AI_EXTRACT_MODEL || 'ag/gemini-3.5-flash-low';
 
 const EXPENSE_CATEGORIES = [
   "Makan & Minum", "Transport", "Belanja", "Hiburan", "Tagihan", 
@@ -106,6 +106,7 @@ async function callAI(
         ],
         temperature: 0.1,
         max_tokens: 1000,
+        stream: false,
       }),
     });
 
@@ -183,7 +184,7 @@ export async function POST(request: NextRequest) {
     }
 
     // System prompt
-    const systemPrompt = `Kamu adalah Pundi AI, asisten yang mengekstrak data keuangan dari foto struk atau ucapan suara. Kamu HANYA mengembalikan JSON mentah yang valid, TANPA penjelasan, TANPA markdown, TANPA kode blok. HANYA BERIKAN RAW JSON OBJECT.
+    const systemPrompt = `Kamu adalah DicatetinAja AI, asisten yang mengekstrak data keuangan dari foto struk atau ucapan suara. Kamu HANYA mengembalikan JSON mentah yang valid, TANPA penjelasan, TANPA markdown, TANPA kode blok. HANYA BERIKAN RAW JSON OBJECT.
 
 Kategori pengeluaran: ${JSON.stringify(EXPENSE_CATEGORIES)}
 Kategori pemasukan: ${JSON.stringify(INCOME_CATEGORIES)}

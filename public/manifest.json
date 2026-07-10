@@ -1,7 +1,7 @@
 {
-  "name": "Pundi",
-  "short_name": "Pundi",
-  "description": "Pencatat keuangan pribadi yang fun & digamify",
+  "name": "DicatetinAja",
+  "short_name": "DicatetinAja",
+  "description": "Pencatat keuangan pribadi berbasis AI yang fun & digamify",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#F7F7FA",

@@ -116,7 +116,7 @@ export default function DashboardPage() {
                 href="/advisor"
                 onClick={() => haptic('light')}
                 className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-secondary/15 text-accent-secondary active:scale-95 transition-transform"
-                aria-label="Tanya Pundi AI"
+                aria-label="Tanya DicatetinAja AI"
               >
                 <Robot size={20} weight="fill" />
               </Link>

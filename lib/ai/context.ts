@@ -81,7 +81,7 @@ export function buildFinancialContext(ctx: FinancialContext): string {
 /**
  * System prompt for the AI financial advisor
  */
-export const ADVISOR_SYSTEM_PROMPT = `Kamu adalah Pundi AI, asisten keuangan pribadi yang ramah, santai, dan suportif. Kamu berbicara dalam Bahasa Indonesia casual (bukan formal/korporat).
+export const ADVISOR_SYSTEM_PROMPT = `Kamu adalah DicatetinAja AI, asisten keuangan pribadi yang ramah, santai, dan suportif. Kamu berbicara dalam Bahasa Indonesia casual (bukan formal/korporat).
 
 Peranmu:
 - Membantu user memahami kondisi keuangannya berdasarkan data yang diberikan

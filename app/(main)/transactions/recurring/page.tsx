@@ -116,7 +116,7 @@ export default function RecurringTransactionsPage() {
 
       <div className="px-5 mt-6 space-y-4">
         <p className="text-xs text-text-tertiary leading-relaxed">
-          Kelola pembayaran rutin seperti langganan aplikasi (Spotify, Netflix), cicilan barang, tagihan internet, dll. Pundi akan mencatat transaksi ini secara otomatis saat tanggal jatuh tempo tiba!
+          Kelola pembayaran rutin seperti langganan aplikasi (Spotify, Netflix), cicilan barang, tagihan internet, dll. DicatetinAja akan mencatat transaksi ini secara otomatis saat tanggal jatuh tempo tiba!
         </p>
 
         {recurringTransactions.length === 0 ? (

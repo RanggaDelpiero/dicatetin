@@ -640,7 +640,7 @@ export function SplitBillTab() {
                       {isAiExtracting && (
                         <div className="absolute inset-0 bg-bg-elevated/80 flex items-center justify-center gap-2 rounded-xl">
                           <span className="w-4 h-4 rounded-full border-2 border-accent-secondary border-t-transparent animate-spin" />
-                          <span className="text-xs font-semibold text-accent-secondary animate-pulse">Pundi AI sedang membaca...</span>
+                          <span className="text-xs font-semibold text-accent-secondary animate-pulse">DicatetinAja AI sedang membaca...</span>
                         </div>
                       )}
                     </div>

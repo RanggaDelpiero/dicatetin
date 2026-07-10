@@ -374,7 +374,7 @@ export default function ProfilePage() {
 
           <div className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
             <Info size={20} weight="duotone" className="text-text-tertiary" />
-            <span className="text-sm text-text-secondary flex-1 text-left">Pundi v0.1.0 — MVP</span>
+            <span className="text-sm text-text-secondary flex-1 text-left">DicatetinAja v0.1.0 — MVP</span>
           </div>
         </motion.div>
       </div>

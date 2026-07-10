@@ -134,7 +134,7 @@ export function LevelUpModal() {
               {getLevelTitle(newLevel)}
             </p>
             <p className="text-text-tertiary text-sm mb-6">
-              Pundi makin gendut nih 🐷✨
+              DicatetinAja makin pinter nih 🤖✨
             </p>
 
             <button

@@ -2,12 +2,12 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Pundi — Pencatat Keuangan",
-  description: "Aplikasi pencatat keuangan pribadi yang fun & digamify. Nyatet duit rasanya kayak main, bukan kerjaan.",
+  title: "DicatetinAja — Pencatat Keuangan",
+  description: "Aplikasi pencatat keuangan pribadi berbasis AI yang fun & digamify. Nyatet duit rasanya kayak main, bukan kerjaan.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Pundi",
+    title: "DicatetinAja",
   },
   formatDetection: {
     telephone: false,
@@ -39,7 +39,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-180.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Pundi" />
+        <meta name="apple-mobile-web-app-title" content="DicatetinAja" />
       </head>
       <body className="min-h-full bg-bg-primary text-text-primary antialiased font-sans">
         {children}
