@@ -91,9 +91,3 @@ export function getMonthName(dateStr: string): string {
   return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
 }
 
-/**
- * Check if two dates are the same day
- */
-export function isSameDay(date1: string, date2: string): boolean {
-  return date1.split('T')[0] === date2.split('T')[0];
-}
