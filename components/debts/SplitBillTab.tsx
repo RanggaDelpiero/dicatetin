@@ -16,7 +16,10 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useSplitBillStore } from '@/lib/stores/splitbill-store';
 import { useReceivableStore } from '@/lib/stores/receivable-store';
 import { useDebtStore } from '@/lib/stores/debt-store';
+import { useWalletStore } from '@/lib/stores/wallet-store';
+import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
+import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { formatCurrency } from '@/lib/utils/currency';
 import { formatDate } from '@/lib/utils/date';
 import { haptic } from '@/lib/utils/haptic';
@@ -41,9 +44,13 @@ export function SplitBillTab() {
   const { sessions, addSession, deleteSession, markParticipantPaid } = useSplitBillStore();
   const { addReceivable } = useReceivableStore();
   const { addDebt } = useDebtStore();
+  const { wallets, updateBalance } = useWalletStore();
+  const { addTransaction, categories } = useTransactionStore();
   const { addXP, recordActivity, unlockBadge } = useGamificationStore();
 
   const [showAddSheet, setShowAddSheet] = useState(false);
+  const [showPaySheet, setShowPaySheet] = useState<{ sessionId: string; participantId: string; amount: number } | null>(null);
+  const [selectedWalletId, setSelectedWalletId] = useState<string>(wallets[0]?.id || '');
 
   // Multi-step form
   const [step, setStep] = useState<FormStep>('info');
@@ -173,7 +180,7 @@ export function SplitBillTab() {
   const handleVoiceRecord = () => {
     haptic('medium');
     const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       alert('Pencatatan suara tidak didukung oleh browser Anda. Gunakan Chrome atau Safari.');
@@ -373,9 +380,33 @@ export function SplitBillTab() {
     setShowAddSheet(false);
   };
 
-  const handleMarkPaid = (sessionId: string, participantId: string) => {
+  const handleMarkPaid = () => {
+    if (!showPaySheet || !selectedWalletId) return;
+
     haptic('success');
-    markParticipantPaid(sessionId, participantId);
+    markParticipantPaid(showPaySheet.sessionId, showPaySheet.participantId);
+
+    const session = sessions.find(s => s.id === showPaySheet.sessionId);
+    const participant = session?.participants.find(p => p.id === showPaySheet.participantId);
+
+    // If I was the payer, and someone pays me their share, it's income
+    if (session?.paidBy === SELF_NAME && participant) {
+      const splitCategory = categories.find(c => c.name.toLowerCase().includes('lainnya') || c.name.toLowerCase().includes('hadiah')) || categories.find(c => c.type === 'income');
+
+      if (splitCategory) {
+         addTransaction({
+           type: 'income',
+           amount: showPaySheet.amount,
+           category_id: splitCategory.id,
+           wallet_id: selectedWalletId,
+           date: new Date().toISOString(),
+           note: `Pembayaran split bill "${session.title}" dari ${participant.name}`,
+         });
+         updateBalance(selectedWalletId, showPaySheet.amount);
+      }
+    }
+
+    setShowPaySheet(null);
   };
 
   // ---- Step Navigation ----
@@ -534,9 +565,17 @@ export function SplitBillTab() {
                       <span className="text-xs font-semibold tabular-nums text-text-secondary">
                         {formatCurrency(p.amount)}
                       </span>
-                      {p.status !== 'paid' && p.name !== session.paidBy && (
+                      {p.status !== 'paid' && p.name !== session.paidBy && session.paidBy === SELF_NAME && (
                         <button
-                          onClick={() => handleMarkPaid(session.id, p.id)}
+                          onClick={() => { haptic('light'); setShowPaySheet({ sessionId: session.id, participantId: p.id, amount: p.amount }); }}
+                          className="text-[11px] px-2 py-1 rounded-lg bg-accent-primary/10 text-accent-primary font-semibold"
+                        >
+                          Lunas
+                        </button>
+                      )}
+                      {p.status !== 'paid' && p.name !== session.paidBy && session.paidBy !== SELF_NAME && (
+                        <button
+                          onClick={() => { haptic('success'); markParticipantPaid(session.id, p.id); }}
                           className="text-[11px] px-2 py-1 rounded-lg bg-accent-primary/10 text-accent-primary font-semibold"
                         >
                           Lunas
@@ -1055,14 +1094,99 @@ export function SplitBillTab() {
                 <span className="text-lg">→</span>
               </button>
             ) : (
-              <button
-                onClick={handleCreateSplit}
-                className="flex-1 py-3.5 rounded-2xl bg-accent-primary text-white font-semibold text-base active:scale-[0.98] transition-transform"
-              >
-                Buat Split Bill 🍕
-              </button>
+              <div className="flex flex-col w-full gap-3">
+                {paidBy === SELF_NAME && (
+                   <div>
+                      <label className="text-xs font-medium text-text-secondary mb-1.5 block">Kamu Bayar Pakai Kantong Mana?</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {wallets.map((wallet) => (
+                          <button
+                            key={wallet.id}
+                            onClick={() => setSelectedWalletId(wallet.id)}
+                            className={`flex items-center gap-2 p-2.5 rounded-xl border-2 transition-colors ${
+                              selectedWalletId === wallet.id
+                                ? 'border-accent-primary bg-accent-primary/5'
+                                : 'border-transparent bg-bg-secondary'
+                            }`}
+                          >
+                            <div
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-white"
+                              style={{ backgroundColor: wallet.color }}
+                            >
+                              <DynamicIcon name={wallet.icon} size={12} weight="bold" />
+                            </div>
+                            <div className="text-left flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-text-primary truncate">{wallet.name}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                   </div>
+                )}
+                <button
+                  onClick={() => {
+                     handleCreateSplit();
+                     if (paidBy === SELF_NAME && selectedWalletId) {
+                        const splitCategory = categories.find(c => c.name.toLowerCase().includes('makan') || c.name.toLowerCase().includes('hiburan')) || categories.find(c => c.type === 'expense');
+                        if (splitCategory) {
+                           addTransaction({
+                             type: 'expense',
+                             amount: itemTotals,
+                             category_id: splitCategory.id,
+                             wallet_id: selectedWalletId,
+                             date: new Date().toISOString(),
+                             note: `Bayar Split Bill: ${title}`,
+                           });
+                           updateBalance(selectedWalletId, -itemTotals);
+                        }
+                     }
+                  }}
+                  className="w-full py-3.5 rounded-2xl bg-accent-primary text-white font-semibold text-base active:scale-[0.98] transition-transform"
+                >
+                  Buat Split Bill 🍕
+                </button>
+              </div>
             )}
           </div>
+        </div>
+      </BottomSheet>
+
+      {/* Pay Split Sheet */}
+      <BottomSheet isOpen={showPaySheet !== null} onClose={() => setShowPaySheet(null)} title="Terima Uang Patungan">
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs font-medium text-text-secondary mb-1.5 block">Masuk ke Kantong Mana?</label>
+            <div className="grid grid-cols-2 gap-2">
+              {wallets.map((wallet) => (
+                <button
+                  key={wallet.id}
+                  onClick={() => setSelectedWalletId(wallet.id)}
+                  className={`flex items-center gap-2 p-2.5 rounded-xl border-2 transition-colors ${
+                    selectedWalletId === wallet.id
+                      ? 'border-accent-primary bg-accent-primary/5'
+                      : 'border-transparent bg-bg-secondary'
+                  }`}
+                >
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-white"
+                    style={{ backgroundColor: wallet.color }}
+                  >
+                    <DynamicIcon name={wallet.icon} size={12} weight="bold" />
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-text-primary truncate">{wallet.name}</p>
+                    <p className="text-[10px] text-text-tertiary tabular-nums truncate">{formatCurrency(wallet.balance)}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={handleMarkPaid}
+            className="w-full py-4 rounded-2xl bg-accent-primary text-white font-semibold text-base active:scale-[0.98] transition-transform"
+          >
+            Tandai Lunas ✅
+          </button>
         </div>
       </BottomSheet>
     </div>

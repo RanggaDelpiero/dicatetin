@@ -127,16 +127,25 @@ async function callAI(
     }
 
     let reply = '';
+
+    // Anthropic direct string content (some proxies)
+    if (typeof resData.content === 'string') {
+      reply = resData.content;
+    }
     // OpenAI-compatible format
-    if (resData.choices && resData.choices[0]?.message?.content) {
+    else if (resData.choices && resData.choices[0]?.message?.content) {
       reply = resData.choices[0].message.content;
     }
-    // Anthropic /v1/messages format
+    // Anthropic /v1/messages array format
     else if (resData.content && Array.isArray(resData.content)) {
       reply = resData.content
         .filter((block: Record<string, unknown>) => block.type === 'text')
         .map((block: Record<string, unknown>) => block.text)
         .join('');
+    }
+    // Catch-all string fallback if available on top-level
+    else if (typeof resData === 'string') {
+      reply = resData;
     }
 
     if (!reply) {

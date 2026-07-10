@@ -6,11 +6,14 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, CalendarBlank, CurrencyDollar, Trash, CheckCircle } from '@phosphor-icons/react';
+import { Plus, CalendarBlank, Trash, CheckCircle } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { useDebtStore } from '@/lib/stores/debt-store';
+import { useWalletStore } from '@/lib/stores/wallet-store';
+import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
+import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { formatCurrency } from '@/lib/utils/currency';
 import { formatDate } from '@/lib/utils/date';
 import { haptic } from '@/lib/utils/haptic';
@@ -19,6 +22,8 @@ import { calcPercentage } from '@/lib/utils/currency';
 
 export function DebtTab() {
   const { debts, addDebt, deleteDebt, addPayment, getTotalDebt } = useDebtStore();
+  const { wallets, updateBalance } = useWalletStore();
+  const { addTransaction, categories } = useTransactionStore();
   const { addXP, recordActivity, unlockBadge } = useGamificationStore();
 
   const [showAddSheet, setShowAddSheet] = useState(false);
@@ -33,6 +38,7 @@ export function DebtTab() {
   // Payment form
   const [payAmount, setPayAmount] = useState('');
   const [payNote, setPayNote] = useState('');
+  const [selectedWalletId, setSelectedWalletId] = useState<string>(wallets[0]?.id || '');
 
   const handleAddDebt = () => {
     const amount = parseInt(totalAmount, 10);
@@ -58,15 +64,32 @@ export function DebtTab() {
 
   const handlePayment = (debtId: string) => {
     const amount = parseInt(payAmount, 10);
-    if (!amount || amount <= 0) {
+    if (!amount || amount <= 0 || !selectedWalletId) {
       haptic('error');
       return;
     }
     haptic('success');
     addPayment(debtId, amount, payNote || undefined);
 
-    // Check if debt is now paid off
     const debt = debts.find((d) => d.id === debtId);
+
+    // Automatically record an expense transaction
+    const debtCategory = categories.find(c => c.name.toLowerCase().includes('tagihan') || c.name.toLowerCase().includes('cicilan')) || categories.find(c => c.type === 'expense');
+
+    if (debtCategory) {
+      addTransaction({
+        type: 'expense',
+        amount: amount,
+        category_id: debtCategory.id,
+        wallet_id: selectedWalletId,
+        date: new Date().toISOString(),
+        note: `Cicilan hutang ke ${debt?.creditor || 'kreditur'} - ${payNote || ''}`.trim(),
+      });
+      // Deduct from wallet balance
+      updateBalance(selectedWalletId, -amount);
+    }
+
+    // Check if debt is now paid off
     if (debt && debt.remaining_amount - amount <= 0) {
       addXP(XP_REWARDS.COMPLETE_DEBT_PAYMENT);
       unlockBadge('first-debt-paid');
@@ -271,6 +294,33 @@ export function DebtTab() {
         title="Bayar Cicilan"
       >
         <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs font-medium text-text-secondary mb-1.5 block">Dari Kantong Mana?</label>
+            <div className="grid grid-cols-2 gap-2">
+              {wallets.map((wallet) => (
+                <button
+                  key={wallet.id}
+                  onClick={() => setSelectedWalletId(wallet.id)}
+                  className={`flex items-center gap-2 p-2.5 rounded-xl border-2 transition-colors ${
+                    selectedWalletId === wallet.id
+                      ? 'border-accent-primary bg-accent-primary/5'
+                      : 'border-transparent bg-bg-secondary'
+                  }`}
+                >
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-white"
+                    style={{ backgroundColor: wallet.color }}
+                  >
+                    <DynamicIcon name={wallet.icon} size={12} weight="bold" />
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-text-primary truncate">{wallet.name}</p>
+                    <p className="text-[10px] text-text-tertiary tabular-nums truncate">{formatCurrency(wallet.balance)}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
           <div>
             <label className="text-xs font-medium text-text-secondary mb-1.5 block">Jumlah Bayar</label>
             <input

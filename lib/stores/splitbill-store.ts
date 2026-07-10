@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { SplitBillSession, SplitBillItem, SplitParticipant, SplitMethod } from '@/lib/types';
 import { generateId } from '@/lib/data/presets';
+import { useSyncStore } from '@/lib/stores/sync-store';
 
 interface SplitBillState {
   sessions: SplitBillSession[];
@@ -97,6 +98,30 @@ export const useSplitBillStore = create<SplitBillState>()(
         };
 
         set((state) => ({ sessions: [session, ...state.sessions] }));
+
+        // Split Bill synchronization
+        // To simplify, we're passing the whole session (including JSON items). Ensure schema is capable, or adapt as needed.
+        useSyncStore.getState().addToQueue({
+           table: 'split_bill_sessions',
+           action: 'insert',
+           payload: {
+              id: session.id,
+              user_id: session.user_id,
+              title: session.title,
+              total_amount: session.total_amount,
+              method: session.method,
+              created_at: session.created_at,
+           },
+        });
+
+        participants.forEach(p => {
+           useSyncStore.getState().addToQueue({
+              table: 'split_participants',
+              action: 'insert',
+              payload: p,
+           });
+        });
+
         return session;
       },
 
@@ -104,21 +129,39 @@ export const useSplitBillStore = create<SplitBillState>()(
         set((state) => ({
           sessions: state.sessions.filter((s) => s.id !== id),
         }));
+
+        useSyncStore.getState().addToQueue({
+          table: 'split_bill_sessions',
+          action: 'delete',
+          payload: { id },
+        });
       },
 
       markParticipantPaid: (sessionId, participantId) => {
+        let updatedParticipant: SplitParticipant | undefined;
         set((state) => ({
-          sessions: state.sessions.map((s) =>
-            s.id === sessionId
-              ? {
-                  ...s,
-                  participants: s.participants.map((p) =>
-                    p.id === participantId ? { ...p, status: 'paid' as const } : p
-                  ),
+          sessions: state.sessions.map((s) => {
+            if (s.id === sessionId) {
+              const newParticipants = s.participants.map((p) => {
+                if (p.id === participantId) {
+                  updatedParticipant = { ...p, status: 'paid' as const };
+                  return updatedParticipant;
                 }
-              : s
-          ),
+                return p;
+              });
+              return { ...s, participants: newParticipants };
+            }
+            return s;
+          }),
         }));
+
+        if (updatedParticipant) {
+           useSyncStore.getState().addToQueue({
+             table: 'split_participants',
+             action: 'update',
+             payload: updatedParticipant,
+           });
+        }
       },
 
       getSession: (id) => {
