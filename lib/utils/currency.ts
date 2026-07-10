@@ -42,6 +42,15 @@ export function formatNumber(amount: number): string {
 }
 
 /**
+ * Format currency with explicit +/- sign
+ * e.g., 1500000 -> "+Rp1.500.000", -1500000 -> "-Rp1.500.000"
+ */
+export function formatSignedCurrency(amount: number): string {
+  const formatted = formatCurrency(Math.abs(amount));
+  return amount < 0 ? `-${formatted}` : `+${formatted}`;
+}
+
+/**
  * Parse display string back to integer
  * Handles: "1.500.000" → 1500000
  */

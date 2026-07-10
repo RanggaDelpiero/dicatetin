@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, PencilSimple, Trash } from '@phosphor-icons/react';
+import { useRouter } from 'next/navigation';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useWalletStore } from '@/lib/stores/wallet-store';
@@ -20,12 +21,14 @@ const WALLET_TYPES: { id: WalletType; label: string }[] = [
   { id: 'cash', label: 'Cash' },
   { id: 'bank', label: 'Bank' },
   { id: 'ewallet', label: 'E-Wallet' },
+  { id: 'credit_card', label: 'Kartu Kredit' },
   { id: 'emergency', label: 'Dana Darurat' },
   { id: 'investment', label: 'Investasi' },
   { id: 'other', label: 'Lainnya' },
 ];
 
 export default function WalletsPage() {
+  const router = useRouter();
   const { wallets, addWallet, deleteWallet, getTotalBalance } = useWalletStore();
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [newName, setNewName] = useState('');
@@ -100,7 +103,13 @@ export default function WalletsPage() {
                 style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
               />
 
-              <div className="relative z-10">
+              <div
+                className="relative z-10 block cursor-pointer"
+                onClick={() => {
+                  haptic('light');
+                  router.push(`/transactions?walletId=${wallet.id}`);
+                }}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
@@ -112,13 +121,15 @@ export default function WalletsPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       haptic('medium');
                       if (confirm(`Hapus kantong "${wallet.name}"?`)) {
                         deleteWallet(wallet.id);
                       }
                     }}
-                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
                   >
                     <Trash size={14} weight="bold" className="text-white/70" />
                   </button>
@@ -225,11 +236,17 @@ export default function WalletsPage() {
 
           {/* Balance */}
           <div>
-            <label className="text-xs font-medium text-text-secondary mb-1.5 block">Saldo Awal</label>
+            <label className="text-xs font-medium text-text-secondary mb-1.5 block">
+              Saldo Awal {newType === 'credit_card' ? '(Gunakan minus untuk hutang)' : ''}
+            </label>
             <input
-              type="number"
+              type="text"
               value={newBalance}
-              onChange={(e) => setNewBalance(e.target.value)}
+              onChange={(e) => {
+                // Allow digits and a single minus sign at the beginning
+                const val = e.target.value.replace(/[^-0-9]/g, '').replace(/(?!^)-/g, '');
+                setNewBalance(val);
+              }}
               placeholder="0"
               className="w-full px-4 py-3 rounded-xl bg-bg-secondary text-text-primary placeholder:text-text-tertiary outline-none text-sm tabular-nums"
             />

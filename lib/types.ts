@@ -3,7 +3,7 @@
 // ============================================
 
 // ---- Wallet / Kantong ----
-export type WalletType = 'cash' | 'bank' | 'ewallet' | 'emergency' | 'investment' | 'other';
+export type WalletType = 'cash' | 'bank' | 'ewallet' | 'emergency' | 'investment' | 'credit_card' | 'other';
 
 export interface Wallet {
   id: string;

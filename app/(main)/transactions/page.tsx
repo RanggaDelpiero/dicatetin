@@ -4,11 +4,13 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp, ArrowDown, Trash, PencilSimple, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
+import { AddTransactionSheet } from '@/components/transactions/AddTransactionSheet';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useWalletStore } from '@/lib/stores/wallet-store';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -17,13 +19,27 @@ import { haptic } from '@/lib/utils/haptic';
 
 type Period = 'week' | 'month' | 'all';
 
-export default function TransactionsPage() {
+function TransactionsListContent() {
   const [period, setPeriod] = useState<Period>('month');
   const [search, setSearch] = useState('');
   const [swipedId, setSwipedId] = useState<string | null>(null);
+  const [selectedWalletFilter, setSelectedWalletFilter] = useState<string>('all');
+
+  // Edit mode
+  const [editTransactionId, setEditTransactionId] = useState<string | undefined>(undefined);
+  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
 
   const { transactions, categories, deleteTransaction } = useTransactionStore();
   const { wallets, updateBalance } = useWalletStore();
+  const searchParams = useSearchParams();
+
+  // Handle query parameter for wallet link
+  React.useEffect(() => {
+    const walletId = searchParams.get('walletId');
+    if (walletId) {
+      setSelectedWalletFilter(walletId);
+    }
+  }, [searchParams]);
 
   // Filter by period
   const filteredTransactions = useMemo(() => {
@@ -41,6 +57,11 @@ export default function TransactionsPage() {
         const d = tx.date.split('T')[0];
         return d >= start && d <= end;
       });
+    }
+
+    // Filter by Wallet
+    if (selectedWalletFilter !== 'all') {
+      filtered = filtered.filter((tx) => tx.wallet_id === selectedWalletFilter);
     }
 
     // Search
@@ -129,16 +150,29 @@ export default function TransactionsPage() {
             ))}
           </div>
 
-          {/* Search */}
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-bg-secondary">
-            <MagnifyingGlass size={18} className="text-text-tertiary" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari transaksi..."
-              className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary outline-none"
-            />
+          {/* Search & Filter */}
+          <div className="flex gap-2">
+            <div className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-bg-secondary">
+              <MagnifyingGlass size={18} className="text-text-tertiary" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari transaksi..."
+                className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary outline-none"
+              />
+            </div>
+
+            <select
+              value={selectedWalletFilter}
+              onChange={(e) => setSelectedWalletFilter(e.target.value)}
+              className="px-3 py-2.5 rounded-xl bg-bg-secondary text-text-primary text-sm outline-none appearance-none font-medium max-w-[120px] truncate"
+            >
+              <option value="all">Semua Kantong</option>
+              {wallets.map((w) => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -188,7 +222,11 @@ export default function TransactionsPage() {
 
                         {/* Transaction card */}
                         <motion.div
-                          className="relative flex items-center gap-3 p-3 bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[14px]"
+                          className="relative flex items-center gap-3 p-3 bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[14px] cursor-pointer"
+                          onClick={() => {
+                            setEditTransactionId(tx.id);
+                            setIsAddSheetOpen(true);
+                          }}
                           drag="x"
                           dragConstraints={{ left: -80, right: 0 }}
                           dragElastic={0.1}
@@ -251,6 +289,23 @@ export default function TransactionsPage() {
           </div>
         )}
       </div>
+
+      <AddTransactionSheet
+        isOpen={isAddSheetOpen}
+        onClose={() => {
+          setIsAddSheetOpen(false);
+          setEditTransactionId(undefined);
+        }}
+        editTransactionId={editTransactionId}
+      />
     </div>
+  );
+}
+
+export default function TransactionsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg-primary" />}>
+      <TransactionsListContent />
+    </Suspense>
   );
 }

@@ -36,6 +36,17 @@ function extractJSON(raw: string): Record<string, unknown> | null {
     // continue to next strategy
   }
 
+  // Strategy 2.5: Aggressive regex extraction
+  const jsonRegex = /(\{[\s\S]*\}|\[[\s\S]*\])/;
+  const jsonMatch = text.match(jsonRegex);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[1]);
+    } catch {
+      // continue
+    }
+  }
+
   // Strategy 3: Extract first JSON object using brace matching
   const firstBrace = text.indexOf('{');
   const lastBrace = text.lastIndexOf('}');
@@ -94,6 +105,7 @@ async function callAI(
           ...messages,
         ],
         temperature: 0.1,
+        max_tokens: 1000,
       }),
     });
 
@@ -171,7 +183,7 @@ export async function POST(request: NextRequest) {
     }
 
     // System prompt
-    const systemPrompt = `Kamu adalah Pundi AI, asisten yang mengekstrak data keuangan dari foto struk atau ucapan suara. Kamu HANYA mengembalikan JSON mentah yang valid, TANPA penjelasan, TANPA markdown, TANPA kode blok.
+    const systemPrompt = `Kamu adalah Pundi AI, asisten yang mengekstrak data keuangan dari foto struk atau ucapan suara. Kamu HANYA mengembalikan JSON mentah yang valid, TANPA penjelasan, TANPA markdown, TANPA kode blok. HANYA BERIKAN RAW JSON OBJECT.
 
 Kategori pengeluaran: ${JSON.stringify(EXPENSE_CATEGORIES)}
 Kategori pemasukan: ${JSON.stringify(INCOME_CATEGORIES)}
