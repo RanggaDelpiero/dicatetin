@@ -116,7 +116,9 @@ async function callAI(
       return { content: null, error: 'Gagal mengekstrak data via AI.', status: response.status };
     }
 
-    const resData = await response.json();
+    const rawText = await response.text();
+    const cleanedText = rawText.replace(/data:\s*\[DONE\]\s*$/, '').trim();
+    const resData = JSON.parse(cleanedText);
 
     // Check for API errors in the payload (some proxies return errors on 200)
     if (resData.error) {

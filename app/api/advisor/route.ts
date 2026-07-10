@@ -105,7 +105,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = await apiResponse.json();
+    const rawText = await apiResponse.text();
+    const cleanedText = rawText.replace(/data:\s*\[DONE\]\s*$/, '').trim();
+    const data = JSON.parse(cleanedText);
 
     // Extract assistant reply — handle both OpenAI and Anthropic response formats
     let reply = '';
