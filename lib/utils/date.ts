@@ -23,20 +23,6 @@ export function formatDate(dateStr: string): string {
 }
 
 /**
- * Format date with day name
- * e.g., "2026-07-09" → "Rabu, 9 Jul 2026"
- */
-export function formatDateFull(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-/**
  * Format relative date
  * e.g., "Hari ini", "Kemarin", "3 hari lalu"
  */
