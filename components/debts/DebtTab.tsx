@@ -140,6 +140,7 @@ export function DebtTab() {
                       if (confirm(`Hapus hutang ke "${debt.creditor}"?`)) deleteDebt(debt.id);
                     }}
                     className="p-1.5 rounded-lg hover:bg-bg-secondary"
+                    aria-label={`Hapus hutang ke ${debt.creditor}`}
                   >
                     <Trash size={16} className="text-text-tertiary" />
                   </button>
