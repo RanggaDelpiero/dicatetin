@@ -9,16 +9,21 @@ import { motion } from 'framer-motion';
 import { Plus, Trash, CheckCircle, User } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useReceivableStore } from '@/lib/stores/receivable-store';
+import { useWalletStore } from '@/lib/stores/wallet-store';
+import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
 import { formatCurrency, calcPercentage } from '@/lib/utils/currency';
-import { formatDate } from '@/lib/utils/date';
+import { DynamicIcon } from '@/components/ui/DynamicIcon';
+import {  } from '@/lib/utils/date';
 import { haptic } from '@/lib/utils/haptic';
 import { XP_REWARDS } from '@/lib/gamification/xp';
 
 export function ReceivableTab() {
   const { receivables, addReceivable, deleteReceivable, addPayment, getTotalReceivable } =
     useReceivableStore();
-  const { addXP, recordActivity } = useGamificationStore();
+  const { wallets, updateBalance } = useWalletStore();
+  const { addTransaction, categories } = useTransactionStore();
+  const { addXP, recordActivity, unlockBadge } = useGamificationStore();
 
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [showPaySheet, setShowPaySheet] = useState<string | null>(null);
@@ -28,6 +33,7 @@ export function ReceivableTab() {
   const [totalAmount, setTotalAmount] = useState('');
   const [note, setNote] = useState('');
   const [payAmount, setPayAmount] = useState('');
+  const [selectedWalletId, setSelectedWalletId] = useState<string>(wallets[0]?.id || '');
 
   const handleAdd = () => {
     const amount = parseInt(totalAmount, 10);
@@ -51,7 +57,7 @@ export function ReceivableTab() {
 
   const handlePayment = (receivableId: string) => {
     const amount = parseInt(payAmount, 10);
-    if (!amount || amount <= 0) {
+    if (!amount || amount <= 0 || !selectedWalletId) {
       haptic('error');
       return;
     }
@@ -59,8 +65,26 @@ export function ReceivableTab() {
     addPayment(receivableId, amount);
 
     const rec = receivables.find((r) => r.id === receivableId);
+
+    // Automatically record an income transaction
+    const receivableCategory = categories.find(c => c.name.toLowerCase().includes('lainnya') || c.name.toLowerCase().includes('hadiah')) || categories.find(c => c.type === 'income');
+
+    if (receivableCategory) {
+      addTransaction({
+        type: 'income',
+        amount: amount,
+        category_id: receivableCategory.id,
+        wallet_id: selectedWalletId,
+        date: new Date().toISOString(),
+        note: `Pelunasan piutang dari ${rec?.debtor || 'debitur'}`.trim(),
+      });
+      // Add to wallet balance
+      updateBalance(selectedWalletId, amount);
+    }
+
     if (rec && rec.remaining_amount - amount <= 0) {
       addXP(XP_REWARDS.SETTLE_RECEIVABLE);
+      unlockBadge('first-receivable-paid');
       recordActivity();
     }
 
@@ -236,6 +260,33 @@ export function ReceivableTab() {
       {/* Payment Sheet */}
       <BottomSheet isOpen={showPaySheet !== null} onClose={() => setShowPaySheet(null)} title="Catat Pembayaran">
         <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs font-medium text-text-secondary mb-1.5 block">Masuk ke Kantong Mana?</label>
+            <div className="grid grid-cols-2 gap-2">
+              {wallets.map((wallet) => (
+                <button
+                  key={wallet.id}
+                  onClick={() => setSelectedWalletId(wallet.id)}
+                  className={`flex items-center gap-2 p-2.5 rounded-xl border-2 transition-colors ${
+                    selectedWalletId === wallet.id
+                      ? 'border-accent-primary bg-accent-primary/5'
+                      : 'border-transparent bg-bg-secondary'
+                  }`}
+                >
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-white"
+                    style={{ backgroundColor: wallet.color }}
+                  >
+                    <DynamicIcon name={wallet.icon} size={12} weight="bold" />
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-text-primary truncate">{wallet.name}</p>
+                    <p className="text-[10px] text-text-tertiary tabular-nums truncate">{formatCurrency(wallet.balance)}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
           <div>
             <label className="text-xs font-medium text-text-secondary mb-1.5 block">Jumlah yang dibayar</label>
             <input

@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Debt, DebtStatus } from '@/lib/types';
 import { generateId } from '@/lib/data/presets';
+import { useSyncStore } from '@/lib/stores/sync-store';
 
 interface DebtPayment {
   id: string;
@@ -44,15 +45,30 @@ export const useDebtStore = create<DebtState>()(
           updated_at: new Date().toISOString(),
         };
         set((state) => ({ debts: [newDebt, ...state.debts] }));
+
+        useSyncStore.getState().addToQueue({
+          table: 'debts',
+          action: 'insert',
+          payload: newDebt,
+        });
+
         return newDebt;
       },
 
       updateDebt: (id, updates) => {
-        set((state) => ({
-          debts: state.debts.map((d) =>
-            d.id === id ? { ...d, ...updates, updated_at: new Date().toISOString() } : d
-          ),
-        }));
+        const updatedDebts = get().debts.map((d) =>
+          d.id === id ? { ...d, ...updates, updated_at: new Date().toISOString() } : d
+        );
+        set({ debts: updatedDebts });
+
+        const updatedDebt = updatedDebts.find((d) => d.id === id);
+        if (updatedDebt) {
+           useSyncStore.getState().addToQueue({
+             table: 'debts',
+             action: 'update',
+             payload: updatedDebt,
+           });
+        }
       },
 
       deleteDebt: (id) => {
@@ -60,6 +76,12 @@ export const useDebtStore = create<DebtState>()(
           debts: state.debts.filter((d) => d.id !== id),
           payments: state.payments.filter((p) => p.debt_id !== id),
         }));
+
+        useSyncStore.getState().addToQueue({
+          table: 'debts',
+          action: 'delete',
+          payload: { id },
+        });
       },
 
       addPayment: (debtId, amount, note) => {
@@ -70,6 +92,7 @@ export const useDebtStore = create<DebtState>()(
           date: new Date().toISOString(),
           note,
         };
+        let updatedDebt: Debt | null = null;
         set((state) => {
           const debt = state.debts.find((d) => d.id === debtId);
           if (!debt) return state;
@@ -77,20 +100,26 @@ export const useDebtStore = create<DebtState>()(
           const newRemaining = Math.max(0, debt.remaining_amount - amount);
           const newStatus: DebtStatus = newRemaining <= 0 ? 'paid_off' : 'active';
 
+          updatedDebt = {
+             ...debt,
+             remaining_amount: newRemaining,
+             status: newStatus,
+             updated_at: new Date().toISOString(),
+          };
+
           return {
             payments: [payment, ...state.payments],
-            debts: state.debts.map((d) =>
-              d.id === debtId
-                ? {
-                    ...d,
-                    remaining_amount: newRemaining,
-                    status: newStatus,
-                    updated_at: new Date().toISOString(),
-                  }
-                : d
-            ),
+            debts: state.debts.map((d) => d.id === debtId ? updatedDebt! : d),
           };
         });
+
+        if (updatedDebt) {
+           useSyncStore.getState().addToQueue({
+             table: 'debts',
+             action: 'update',
+             payload: updatedDebt,
+           });
+        }
       },
 
       getPaymentsByDebt: (debtId) => {

@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Receivable, ReceivableStatus, ReceivablePayment } from '@/lib/types';
 import { generateId } from '@/lib/data/presets';
+import { useSyncStore } from '@/lib/stores/sync-store';
 
 interface ReceivableState {
   receivables: Receivable[];
@@ -36,15 +37,30 @@ export const useReceivableStore = create<ReceivableState>()(
           updated_at: new Date().toISOString(),
         };
         set((state) => ({ receivables: [newR, ...state.receivables] }));
+
+        useSyncStore.getState().addToQueue({
+           table: 'receivables',
+           action: 'insert',
+           payload: newR,
+        });
+
         return newR;
       },
 
       updateReceivable: (id, updates) => {
-        set((state) => ({
-          receivables: state.receivables.map((r) =>
-            r.id === id ? { ...r, ...updates, updated_at: new Date().toISOString() } : r
-          ),
-        }));
+        const updatedReceivables = get().receivables.map((r) =>
+          r.id === id ? { ...r, ...updates, updated_at: new Date().toISOString() } : r
+        );
+        set({ receivables: updatedReceivables });
+
+        const updatedR = updatedReceivables.find((r) => r.id === id);
+        if (updatedR) {
+           useSyncStore.getState().addToQueue({
+             table: 'receivables',
+             action: 'update',
+             payload: updatedR,
+           });
+        }
       },
 
       deleteReceivable: (id) => {
@@ -52,6 +68,12 @@ export const useReceivableStore = create<ReceivableState>()(
           receivables: state.receivables.filter((r) => r.id !== id),
           payments: state.payments.filter((p) => p.receivable_id !== id),
         }));
+
+        useSyncStore.getState().addToQueue({
+          table: 'receivables',
+          action: 'delete',
+          payload: { id },
+        });
       },
 
       addPayment: (receivableId, amount, note) => {
@@ -62,6 +84,7 @@ export const useReceivableStore = create<ReceivableState>()(
           date: new Date().toISOString(),
           note,
         };
+        let updatedR: Receivable | null = null;
         set((state) => {
           const rec = state.receivables.find((r) => r.id === receivableId);
           if (!rec) return state;
@@ -70,20 +93,32 @@ export const useReceivableStore = create<ReceivableState>()(
           const newStatus: ReceivableStatus =
             newRemaining <= 0 ? 'paid' : newRemaining < rec.total_amount ? 'partial' : 'unpaid';
 
+          updatedR = {
+             ...rec,
+             remaining_amount: newRemaining,
+             status: newStatus,
+             updated_at: new Date().toISOString(),
+          };
+
           return {
             payments: [payment, ...state.payments],
-            receivables: state.receivables.map((r) =>
-              r.id === receivableId
-                ? {
-                    ...r,
-                    remaining_amount: newRemaining,
-                    status: newStatus,
-                    updated_at: new Date().toISOString(),
-                  }
-                : r
-            ),
+            receivables: state.receivables.map((r) => r.id === receivableId ? updatedR! : r),
           };
         });
+
+        useSyncStore.getState().addToQueue({
+           table: 'receivable_payments',
+           action: 'insert',
+           payload: payment,
+        });
+
+        if (updatedR) {
+           useSyncStore.getState().addToQueue({
+             table: 'receivables',
+             action: 'update',
+             payload: updatedR,
+           });
+        }
       },
 
       getPaymentsByReceivable: (receivableId) => {
