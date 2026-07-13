@@ -29,6 +29,12 @@
   --gamify-gold: #FFC53D;
   --gamify-gold-hover: #F5B800;
 
+  /* Premium AI Tokens */
+  --ai-gradient-start: #6366F1;
+  --ai-gradient-mid: #A855F7;
+  --ai-gradient-end: #EC4899;
+  --ai-glow: 0 0 24px rgba(168, 85, 247, 0.25);
+
   /* Borders & Dividers */
   --border-light: rgba(0, 0, 0, 0.06);
   --border-medium: rgba(0, 0, 0, 0.10);
@@ -101,6 +107,8 @@
   --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.30);
   --shadow-elevated: 0 8px 30px rgba(0, 0, 0, 0.50);
   --shadow-fab: 0 4px 20px rgba(52, 211, 105, 0.30);
+  
+  --ai-glow: 0 0 32px rgba(168, 85, 247, 0.4);
 }
 
 /* ============================================
@@ -126,6 +134,9 @@
   --color-gamify-gold: var(--gamify-gold);
   --color-border-light: var(--border-light);
   --color-border-medium: var(--border-medium);
+  --color-ai-start: var(--ai-gradient-start);
+  --color-ai-mid: var(--ai-gradient-mid);
+  --color-ai-end: var(--ai-gradient-end);
 
   /* Fonts */
   --font-sans: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
@@ -315,4 +326,22 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Premium AI Gradient Background */
+.bg-ai-gradient {
+  background: linear-gradient(135deg, var(--ai-gradient-start), var(--ai-gradient-mid), var(--ai-gradient-end));
+}
+
+/* Premium AI Gradient Text */
+.text-ai-gradient {
+  background: linear-gradient(135deg, var(--ai-gradient-start), var(--ai-gradient-mid), var(--ai-gradient-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Premium AI Glow Effect */
+.shadow-ai-glow {
+  box-shadow: var(--ai-glow);
 }

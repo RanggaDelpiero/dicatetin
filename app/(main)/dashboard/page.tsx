@@ -15,6 +15,7 @@ import { DonutChart } from '@/components/charts/DonutChart';
 import { BudgetSettingsSheet } from '@/components/budget/BudgetSettingsSheet';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { InsightsCarousel } from '@/components/insights/InsightsCarousel';
+import { CashFlowForecastCard } from '@/components/intelligence/CashFlowForecastCard';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useWalletStore } from '@/lib/stores/wallet-store';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
@@ -32,6 +33,7 @@ import { haptic } from '@/lib/utils/haptic';
 
 export default function DashboardPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [activeWalletIndex, setActiveWalletIndex] = useState(0);
 
   const { transactions, getCategoryTotals, getTotalByType } = useTransactionStore();
@@ -42,6 +44,7 @@ export default function DashboardPage() {
   const { isOnline, isSyncing, syncQueue } = useSyncStore();
 
   useEffect(() => {
+    setMounted(true);
     checkAndTriggerRecurring();
     generateNotifications();
   }, [checkAndTriggerRecurring, generateNotifications]);
@@ -117,6 +120,10 @@ export default function DashboardPage() {
     );
   }, [transactions, insightsCategories, budgetsData, debtsData, recurringTransactions]);
 
+  if (!mounted) {
+    return <div className="min-h-screen bg-bg-primary" />;
+  }
+
   return (
     <div ref={scrollRef} className="min-h-screen bg-bg-primary">
       {/* Header */}
@@ -134,7 +141,7 @@ export default function DashboardPage() {
                 {getMonthName(new Date().toISOString())}
               </motion.p>
               <motion.h1
-                className="text-[28px] font-bold text-text-primary tracking-tight"
+                className="text-[32px] font-extrabold text-text-primary tracking-tight"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -144,46 +151,48 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-2">
               <AnimatePresence mode="wait">
-                {!isOnline ? (
-                  <motion.div
-                    key="offline"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-danger/10 text-accent-danger"
-                    title="Offline - Menunggu Koneksi"
-                  >
-                    <CloudSlash size={18} weight="duotone" />
-                  </motion.div>
-                ) : syncQueue.length > 0 || isSyncing ? (
-                  <motion.div
-                    key="syncing"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-secondary/10 text-accent-secondary"
-                    title="Sinkronisasi ke Cloud..."
-                  >
-                    <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                      <Cloud size={18} weight="duotone" />
+                {mounted && (
+                  !isOnline ? (
+                    <motion.div
+                      key="offline"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-danger/10 text-accent-danger"
+                      title="Offline - Menunggu Koneksi"
+                    >
+                      <CloudSlash size={18} weight="duotone" />
                     </motion.div>
-                    {syncQueue.length > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-accent-secondary text-white text-[8px] font-bold flex items-center justify-center">
-                        {syncQueue.length}
-                      </span>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="synced"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-primary/10 text-accent-primary"
-                    title="Tersinkronisasi"
-                  >
-                    <CloudCheck size={18} weight="duotone" />
-                  </motion.div>
+                  ) : syncQueue.length > 0 || isSyncing ? (
+                    <motion.div
+                      key="syncing"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-secondary/10 text-accent-secondary"
+                      title="Sinkronisasi ke Cloud..."
+                    >
+                      <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+                        <Cloud size={18} weight="duotone" />
+                      </motion.div>
+                      {syncQueue.length > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-accent-secondary text-white text-[8px] font-bold flex items-center justify-center">
+                          {syncQueue.length}
+                        </span>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="synced"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-primary/10 text-accent-primary"
+                      title="Tersinkronisasi"
+                    >
+                      <CloudCheck size={18} weight="duotone" />
+                    </motion.div>
+                  )
                 )}
               </AnimatePresence>
 
@@ -213,165 +222,58 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="px-5 space-y-5 pb-8">
-        {/* Daily Budget Hero (PRD §5.7: "Hero pertama yang terlihat: Budget Harian") */}
+      <div className="px-5 space-y-6 pb-24">
+        {/* Balance Card - PREMIUM AI REDESIGN */}
         <motion.div
-          className="rounded-[24px] bg-bg-elevated shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5 border border-border-light text-center relative overflow-hidden"
+          className="relative overflow-hidden rounded-[28px] p-6 bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-white shadow-ai-glow mt-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, type: 'spring', stiffness: 200 }}
         >
-          {dailyBudgetLimit === 0 ? (
-            <div className="py-4">
-              <span className="text-4xl">🎯</span>
-              <h3 className="text-base font-bold text-text-primary mt-2">Atur Budget Harianmu!</h3>
-              <p className="text-xs text-text-tertiary mt-1 mb-4 leading-relaxed max-w-[280px] mx-auto">
-                Mulai atur limit belanja harian per kategori biar keuanganmu tetap terkontrol.
-              </p>
-              <button
-                onClick={() => { haptic('light'); setShowBudgetSheet(true); }}
-                className="px-5 py-2.5 rounded-xl bg-accent-secondary text-white text-xs font-bold active:scale-95 transition-all shadow-md"
-              >
-                Atur Budget Sekarang ✨
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <div className="flex justify-between items-center w-full mb-3">
-                <span className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">
-                  Sisa Budget Hari Ini
-                </span>
-                <button
-                  onClick={() => { haptic('light'); setShowBudgetSheet(true); }}
-                  className="flex items-center gap-1 text-[11px] font-bold text-accent-secondary bg-accent-secondary/10 px-2.5 py-1 rounded-lg"
-                >
-                  <PencilSimple size={12} /> Atur
-                </button>
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
+
+          <div className="relative z-10">
+            <p className="text-sm font-medium text-white/80 mb-1 tracking-wide uppercase">Total Kekayaan Bersih</p>
+            <h2 className="text-[38px] font-black tabular-nums tracking-tighter leading-none mb-6">
+              {formatCurrency(netWorth)}
+            </h2>
+
+            {/* Income/Expense summary */}
+            <div className="flex gap-4 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center">
+                  <ArrowUp size={20} weight="bold" className="text-[#34D369]" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-white/70 uppercase font-semibold">Pemasukan</p>
+                  <p className="text-sm font-bold tabular-nums">{formatCurrencyCompact(monthIncome)}</p>
+                </div>
               </div>
-
-              {/* Progress Ring with Daily mascot */}
-              <div className="relative my-2">
-                <ProgressRing
-                  percentage={dailyBudgetPct}
-                  size={120}
-                  strokeWidth={8}
-                  color={remainingDailyBudget >= 0 ? "var(--accent-primary)" : "var(--accent-danger)"}
-                >
-                  <span className="text-4xl">🐷</span>
-                </ProgressRing>
+              <div className="w-[1px] bg-white/15" />
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center">
+                  <ArrowDown size={20} weight="bold" className="text-[#F87171]" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-white/70 uppercase font-semibold">Pengeluaran</p>
+                  <p className="text-sm font-bold tabular-nums">{formatCurrencyCompact(monthExpense)}</p>
+                </div>
               </div>
-
-              <h2 className={`text-2xl font-bold tabular-nums tracking-tight mt-3 ${
-                remainingDailyBudget >= 0 ? 'text-text-primary' : 'text-accent-danger'
-              }`}>
-                {remainingDailyBudget >= 0
-                  ? formatCurrency(remainingDailyBudget)
-                  : `Boncos ${formatCurrency(Math.abs(remainingDailyBudget))}!`}
-              </h2>
-
-              <p className="text-[11px] text-text-tertiary mt-1 tabular-nums">
-                Limit harian: {formatCurrency(dailyBudgetLimit)} · Terpakai: {formatCurrency(todayExpense)}
-              </p>
             </div>
-          )}
+          </div>
         </motion.div>
 
-        {/* Accounting Net Worth Panel */}
+        {/* Kantong Saya (Wallets Section) - Refined */}
         <motion.div
-          className="rounded-[20px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-4 border border-border-light"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-semibold">Kekayaan Bersih (Net Worth)</p>
-              <h3 className="text-xl font-bold text-text-primary tabular-nums mt-0.5">
-                {formatCurrency(netWorth)}
-              </h3>
-            </div>
-            <span className="text-xs px-2 py-1 rounded-full bg-accent-secondary/10 text-accent-secondary font-bold">
-              Akuntansi 📊
-            </span>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 pt-3 border-t border-border-light text-center">
-            <div>
-              <p className="text-[9px] text-text-tertiary uppercase font-semibold">Aset (Saldo)</p>
-              <p className="text-xs font-bold text-accent-primary tabular-nums mt-0.5">
-                {formatCurrencyCompact(totalBalance)}
-              </p>
-            </div>
-            <div className="border-l border-border-light pl-2">
-              <p className="text-[9px] text-text-tertiary uppercase font-semibold">Piutang</p>
-              <p className="text-xs font-bold text-accent-secondary tabular-nums mt-0.5">
-                {formatCurrencyCompact(totalReceivables)}
-              </p>
-            </div>
-            <div className="border-l border-border-light pl-2">
-              <p className="text-[9px] text-text-tertiary uppercase font-semibold">Hutang Pribadi</p>
-              <p className="text-xs font-bold text-accent-danger tabular-nums mt-0.5">
-                {formatCurrencyCompact(totalDebts)}
-              </p>
-            </div>
-            <div className="border-l border-border-light pl-2">
-              <p className="text-[9px] text-text-tertiary uppercase font-semibold">Tagihan CC</p>
-              <p className="text-xs font-bold text-accent-danger tabular-nums mt-0.5">
-                {formatCurrencyCompact(totalCCOutstanding)}
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Balance Card */}
-        <motion.div
-          className="relative overflow-hidden rounded-[20px] p-5 bg-gradient-to-br from-accent-secondary to-accent-primary text-white"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, type: 'spring', stiffness: 200 }}
-        >
-          {/* Decorative circles */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10" />
-          <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-white/5" />
-
-          <p className="text-sm text-white/70 mb-1">Total Saldo</p>
-          <h2 className="text-[32px] font-bold tabular-nums mb-4 tracking-tight">
-            {formatCurrency(totalBalance)}
-          </h2>
-
-          {/* Income/Expense summary */}
-          <div className="flex gap-4 mt-4 pt-4 border-t border-white/15">
-            <div className="flex items-center gap-2 flex-1">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <ArrowUp size={16} weight="bold" />
-              </div>
-              <div>
-                <p className="text-[11px] text-white/60">Pemasukan</p>
-                <p className="text-sm font-bold tabular-nums">{formatCurrencyCompact(monthIncome)}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-1">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <ArrowDown size={16} weight="bold" />
-              </div>
-              <div>
-                <p className="text-[11px] text-white/60">Pengeluaran</p>
-                <p className="text-sm font-bold tabular-nums">{formatCurrencyCompact(monthExpense)}</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Kantong Saya (Wallets Section) */}
-        <motion.div
-          className="mt-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.38 }}
-        >
           <div className="flex items-center justify-between mb-3 px-1">
             <h3 className="text-sm font-bold text-text-primary">Kantong Saya</h3>
-            <Link href="/wallets" className="text-xs font-semibold text-accent-primary" onClick={() => haptic('light')}>
+            <Link href="/wallets" className="text-xs font-semibold text-accent-secondary" onClick={() => haptic('light')}>
               Kelola
             </Link>
           </div>
@@ -381,18 +283,16 @@ export default function DashboardPage() {
                 href="/wallets"
                 key={wallet.id}
                 onClick={() => haptic('light')}
-                className="flex flex-col min-w-[130px] p-3 rounded-2xl bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] active:scale-95 transition-all"
+                className="flex flex-col min-w-[140px] p-3.5 rounded-2xl bg-bg-elevated shadow-card active:scale-95 transition-all border border-border-light"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 rounded-lg text-white" style={{ backgroundColor: wallet.color }}>
-                    <DynamicIcon name={wallet.icon} size={16} weight="fill" />
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-2 rounded-xl text-white shadow-sm" style={{ backgroundColor: wallet.color }}>
+                    <DynamicIcon name={wallet.icon} size={18} weight="fill" />
                   </div>
-                  <span className="text-xs font-semibold text-text-primary truncate">{wallet.name}</span>
+                  {wallet.type === 'credit_card' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-secondary text-text-secondary font-bold">CC</span>}
                 </div>
                 <div className="mt-auto">
-                  <p className="text-[10px] text-text-tertiary mb-0.5">
-                    {wallet.type === 'credit_card' ? 'Total Tagihan' : 'Saldo'}
-                  </p>
+                  <span className="text-xs font-semibold text-text-primary truncate block mb-0.5">{wallet.name}</span>
                   <p className="text-sm font-bold text-text-primary tabular-nums">
                     {wallet.type === 'credit_card' 
                       ? formatCurrencyCompact(wallet.credit_outstanding || 0) 
@@ -402,6 +302,84 @@ export default function DashboardPage() {
               </Link>
             ))}
           </div>
+        </motion.div>
+
+        {/* Daily Budget Hero - Glass effect */}
+        <motion.div
+          className="rounded-[24px] glass shadow-elevated p-6 border border-border-light text-center relative overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, type: 'spring', stiffness: 200 }}
+        >
+          {dailyBudgetLimit === 0 ? (
+            <div className="py-4">
+              <span className="text-5xl drop-shadow-md">🎯</span>
+              <h3 className="text-lg font-bold text-text-primary mt-3">Atur Budget Harianmu!</h3>
+              <p className="text-xs text-text-secondary mt-2 mb-5 leading-relaxed max-w-[280px] mx-auto">
+                Mulai atur limit belanja harian per kategori biar keuanganmu tetap terkontrol.
+              </p>
+              <button
+                onClick={() => { haptic('light'); setShowBudgetSheet(true); }}
+                className="px-6 py-3.5 rounded-2xl bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-white text-sm font-bold active:scale-95 transition-all shadow-ai-glow"
+              >
+                Atur Budget Sekarang ✨
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <div className="flex justify-between items-center w-full mb-4">
+                <span className="text-[11px] font-bold text-text-tertiary uppercase tracking-widest">
+                  Sisa Budget Hari Ini
+                </span>
+                <button
+                  onClick={() => { haptic('light'); setShowBudgetSheet(true); }}
+                  className="flex items-center gap-1 text-[11px] font-bold text-accent-secondary bg-accent-secondary/10 px-3 py-1.5 rounded-xl hover:bg-accent-secondary/20 transition-colors"
+                >
+                  <PencilSimple size={14} weight="bold" /> Atur
+                </button>
+              </div>
+
+              {/* Progress Ring with Daily mascot */}
+              <div className="relative my-2 drop-shadow-lg">
+                <ProgressRing
+                  percentage={dailyBudgetPct}
+                  size={140}
+                  strokeWidth={10}
+                  color={remainingDailyBudget >= 0 ? "var(--accent-primary)" : "var(--accent-danger)"}
+                >
+                  <span className="text-5xl drop-shadow-sm">🐷</span>
+                </ProgressRing>
+              </div>
+
+              <h2 className={`text-3xl font-black tabular-nums tracking-tighter mt-4 ${
+                remainingDailyBudget >= 0 ? 'text-text-primary' : 'text-accent-danger'
+              }`}>
+                {remainingDailyBudget >= 0
+                  ? formatCurrency(remainingDailyBudget)
+                  : `Boncos ${formatCurrency(Math.abs(remainingDailyBudget))}!`}
+              </h2>
+
+              <div className="flex items-center gap-3 mt-3 px-4 py-2 rounded-xl bg-bg-secondary text-[11px] font-medium text-text-secondary">
+                <span>Limit: {formatCurrencyCompact(dailyBudgetLimit)}</span>
+                <span className="w-1 h-1 rounded-full bg-border-medium" />
+                <span>Pakai: {formatCurrencyCompact(todayExpense)}</span>
+              </div>
+            </div>
+          )}
+        </motion.div>
+
+        {/* AI Financial Forecast Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
+        >
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="text-sm font-bold text-text-primary flex items-center gap-1.5">
+              <Sparkle weight="fill" className="text-ai-mid" /> AI Forecast
+            </h3>
+          </div>
+          <CashFlowForecastCard />
         </motion.div>
 
         {/* XP & Level Card */}
@@ -452,9 +430,9 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-5">
               <h3 className="text-[15px] font-semibold text-text-primary">Pengeluaran Bulan Ini</h3>
-              <span className="text-xs text-text-tertiary">{getMonthName(new Date().toISOString())}</span>
+              <span className="text-xs text-text-tertiary font-medium bg-bg-secondary px-2 py-1 rounded-md">{getMonthName(new Date().toISOString())}</span>
             </div>
 
             <div className="flex items-center gap-4">
@@ -477,7 +455,7 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
-        {/* Financial Insights Carousel (replaces static Highlight card — PRD §5.8) */}
+        {/* Financial Insights Carousel */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -513,15 +491,15 @@ export default function DashboardPage() {
               {recentTransactions.map((tx, index) => (
                 <motion.div
                   key={tx.id}
-                  className="flex items-center gap-3 p-3 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
+                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-bg-elevated shadow-card border border-border-light"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.05 }}
+                  transition={{ delay: 0.5 + index * 0.05 }}
                 >
                   {/* Category icon */}
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: (tx.categoryData?.color || '#6B7280') + '20' }}
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: (tx.categoryData?.color || '#6B7280') + '15' }}
                   >
                     <DynamicIcon
                       name={tx.categoryData?.icon || 'DotsThree'}

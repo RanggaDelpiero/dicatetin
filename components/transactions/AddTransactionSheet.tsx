@@ -6,7 +6,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Backspace, CalendarBlank, Notebook, ArrowUp, ArrowDown } from '@phosphor-icons/react';
+import { Backspace, CalendarBlank, Notebook, ArrowUp, ArrowDown, Sparkle, SpinnerGap } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
@@ -43,6 +43,45 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
   const [showNote, setShowNote] = useState(false);
   const [isAiExtracting, setIsAiExtracting] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
+
+  const handleAiCategorize = async () => {
+    if (!note.trim()) {
+      alert('Tulis catatan transaksi dulu ya sebelum minta tolong AI.');
+      return;
+    }
+    
+    haptic('medium');
+    setIsCategorizing(true);
+    
+    try {
+      const res = await fetch('/api/ai/categorize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          note,
+          type,
+          categories: filteredCategories.map(c => ({ id: c.id, name: c.name }))
+        })
+      });
+      
+      if (!res.ok) throw new Error('Gagal menghubungi AI.');
+      
+      const data = await res.json();
+      if (data.categoryId) {
+        setSelectedCategoryId(data.categoryId);
+        haptic('success');
+      } else if (data.alternativeCategoryId) {
+        setSelectedCategoryId(data.alternativeCategoryId);
+        haptic('success');
+      }
+    } catch (err) {
+      console.error(err);
+      haptic('error');
+    } finally {
+      setIsCategorizing(false);
+    }
+  };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -528,14 +567,25 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
               exit={{ height: 0, opacity: 0 }}
               className="mb-4 overflow-hidden"
             >
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Tulis catatan..."
-                className="w-full px-4 py-3 rounded-xl bg-bg-secondary text-text-primary placeholder:text-text-tertiary outline-none text-sm"
-                autoFocus
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Tulis catatan (contoh: Kopi Starbucks)"
+                  className="w-full pl-4 pr-12 py-3 rounded-xl bg-bg-secondary text-text-primary placeholder:text-text-tertiary outline-none text-sm"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAiCategorize}
+                  disabled={isCategorizing || !note.trim()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center bg-accent-secondary/10 text-accent-secondary disabled:opacity-50 transition-all active:scale-95"
+                  title="Pilih kategori otomatis dengan AI"
+                >
+                  {isCategorizing ? <SpinnerGap size={16} className="animate-spin" /> : <Sparkle size={16} weight="fill" />}
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

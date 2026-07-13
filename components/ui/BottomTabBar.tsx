@@ -41,10 +41,10 @@ export function BottomTabBar({ onAddPress }: BottomTabBarProps) {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border-light pb-safe"
-      style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto px-1"
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)' }}
     >
-      <div className="flex items-end justify-around px-2 h-[56px]">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-bg-elevated/80 backdrop-blur-2xl rounded-full border border-border-light shadow-elevated">
         {tabs.map((tab) => {
           const isActive = tab.id !== 'add' && pathname.startsWith(tab.href);
           const isAddButton = tab.id === 'add';
@@ -59,16 +59,16 @@ export function BottomTabBar({ onAddPress }: BottomTabBarProps) {
                   haptic('medium');
                   onAddPress?.();
                 }}
-                className="relative -top-3 flex items-center justify-center w-[52px] h-[52px] rounded-full bg-accent-primary shadow-[0_4px_20px_rgba(34,197,94,0.35)] active:scale-95 transition-transform"
+                className="relative flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] shadow-ai-glow active:scale-95 transition-transform mx-1"
                 aria-label="Tambah transaksi"
               >
-                <Plus size={26} weight="bold" className="text-white" />
+                <Plus size={24} weight="bold" className="text-white relative z-10" />
                 {/* Glow pulse */}
                 <motion.div
-                  className="absolute inset-0 rounded-full bg-accent-primary"
-                  animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{ zIndex: -1 }}
+                  className="absolute inset-0 rounded-full bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899]"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{ zIndex: 0 }}
                 />
               </button>
             );
@@ -80,27 +80,21 @@ export function BottomTabBar({ onAddPress }: BottomTabBarProps) {
               href={tab.href}
               id={`tab-${tab.id}`}
               onClick={() => haptic('light')}
-              className="flex flex-col items-center justify-center gap-0.5 px-2 py-1 relative haptic-press"
+              className="flex flex-col items-center justify-center gap-1 w-[46px] py-1 relative haptic-press"
             >
-              <Icon
-                size={24}
-                weight={isActive ? 'duotone' : 'regular'}
-                className={isActive ? 'text-accent-primary' : 'text-text-tertiary'}
-              />
+              <div className={`relative flex items-center justify-center w-9 h-9 rounded-full transition-colors ${isActive ? 'bg-text-primary text-bg-primary' : 'text-text-tertiary'}`}>
+                <Icon
+                  size={20}
+                  weight={isActive ? 'fill' : 'regular'}
+                />
+              </div>
               <span
-                className={`text-[10px] leading-tight ${
-                  isActive ? 'text-accent-primary font-semibold' : 'text-text-tertiary'
+                className={`text-[9px] leading-none ${
+                  isActive ? 'text-text-primary font-bold' : 'text-text-tertiary font-medium'
                 }`}
               >
                 {tab.label}
               </span>
-              {isActive && (
-                <motion.div
-                  layoutId="tab-indicator"
-                  className="absolute -bottom-1 w-5 h-[3px] rounded-full bg-accent-primary"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
             </Link>
           );
         })}

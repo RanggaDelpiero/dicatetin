@@ -11,6 +11,8 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { formatCurrency } from '@/lib/utils/currency';
 import { haptic } from '@/lib/utils/haptic';
+import { Sparkle, SpinnerGap } from '@phosphor-icons/react';
+import { getCurrentMonthRange } from '@/lib/utils/date';
 
 interface BudgetSettingsSheetProps {
   isOpen: boolean;
@@ -18,11 +20,13 @@ interface BudgetSettingsSheetProps {
 }
 
 export function BudgetSettingsSheet({ isOpen, onClose }: BudgetSettingsSheetProps) {
-  const { categories } = useTransactionStore();
+  const { categories, getTotalByType, getCategoryTotals } = useTransactionStore();
   const { budgets, setCategoryBudget, getTotalMonthlyBudget, getTotalWeeklyBudget, getTotalDailyBudget } =
     useBudgetStore();
 
   const expenseCategories = categories.filter((c) => c.type === 'expense');
+
+  const [isAILoading, setIsAILoading] = useState(false);
 
   // Keep local edits
   const [localBudgets, setLocalBudgets] = useState<Record<string, string>>(() => {
@@ -49,6 +53,68 @@ export function BudgetSettingsSheet({ isOpen, onClose }: BudgetSettingsSheetProp
     onClose();
   };
 
+  const handleAIAutoPilot = async () => {
+    haptic('medium');
+    setIsAILoading(true);
+    
+    try {
+      // Get previous month's data as basis, or current if it's new
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
+      const lastDay = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+      
+      const income = getTotalByType('income', firstDay, lastDay) || getTotalByType('income');
+      const expense = getTotalByType('expense', firstDay, lastDay) || getTotalByType('expense');
+      const categoryBreakdown = getCategoryTotals(firstDay, lastDay, 'expense');
+
+      if (!income) {
+        alert('DicatetinAja butuh data pemasukan untuk menghitung budget idealmu. Yuk catat pemasukan dulu!');
+        return;
+      }
+
+      const res = await fetch('/api/ai/budget-coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          income,
+          expense,
+          categoryBreakdown: categoryBreakdown.map(c => ({
+            categoryId: c.categoryId,
+            categoryName: c.category,
+            amount: c.amount
+          })),
+          strictnessMode: 'normal'
+        })
+      });
+
+      if (!res.ok) throw new Error('Gagal menghubungi AI Budget Coach');
+      
+      const data = await res.json();
+      
+      if (data.suggestions && Array.isArray(data.suggestions)) {
+        const newLocalBudgets = { ...localBudgets };
+        data.suggestions.forEach((s: any) => {
+          if (s.categoryId && s.suggestedAmount > 0) {
+            newLocalBudgets[s.categoryId] = s.suggestedAmount.toString();
+          } else {
+            // Find by name if id is missing/wrong
+            const cat = expenseCategories.find(c => c.name.toLowerCase() === s.categoryName?.toLowerCase());
+            if (cat && s.suggestedAmount > 0) {
+              newLocalBudgets[cat.id] = s.suggestedAmount.toString();
+            }
+          }
+        });
+        setLocalBudgets(newLocalBudgets);
+        haptic('success');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Maaf, AI sedang sibuk. Coba atur manual dulu ya!');
+    } finally {
+      setIsAILoading(false);
+    }
+  };
+
   // Calculate live totals for the sheet header
   const liveMonthly = expenseCategories.reduce((sum, cat) => {
     const val = parseInt(localBudgets[cat.id] || '0', 10) || 0;
@@ -61,6 +127,20 @@ export function BudgetSettingsSheet({ isOpen, onClose }: BudgetSettingsSheetProp
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Atur Budget Bulanan">
       <div className="p-5 flex flex-col h-[75vh]">
         {/* Cascade Summary Header */}
+        <div className="flex items-center justify-between mb-3">
+          <button 
+            onClick={handleAIAutoPilot}
+            disabled={isAILoading}
+            className="flex items-center justify-center w-full gap-2 py-2.5 rounded-xl bg-accent-secondary/10 text-accent-secondary text-xs font-bold active:scale-[0.98] transition-transform border border-accent-secondary/20"
+          >
+            {isAILoading ? (
+              <><SpinnerGap size={16} className="animate-spin" /> Meracik Budget...</>
+            ) : (
+              <><Sparkle size={16} weight="fill" /> Minta Saran AI</>
+            )}
+          </button>
+        </div>
+
         <div className="grid grid-cols-3 gap-2 p-3.5 rounded-2xl bg-bg-secondary mb-4 text-center">
           <div>
             <p className="text-[10px] text-text-tertiary uppercase font-semibold">Bulanan</p>

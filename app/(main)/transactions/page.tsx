@@ -523,7 +523,7 @@ function TransactionsListContent() {
 
                         {/* Transaction card */}
                         <motion.div
-                          className="relative flex items-center gap-3 p-3 bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[14px] cursor-pointer"
+                          className="relative flex items-center gap-3 p-3.5 bg-bg-elevated shadow-card rounded-2xl border border-border-light cursor-pointer"
                           onClick={() => setSelectedTxId(tx.id)}
                           drag="x"
                           dragConstraints={{ left: -80, right: 0 }}
@@ -541,8 +541,8 @@ function TransactionsListContent() {
                         >
                           {/* Category icon */}
                           <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: (cat?.color || '#6B7280') + '20' }}
+                            className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: (cat?.color || '#6B7280') + '15' }}
                           >
                             <DynamicIcon
                               name={tx.payment_kind === 'credit_card_payment' ? 'CreditCard' : tx.type === 'transfer' ? 'ArrowsLeftRight' : (cat?.icon || 'DotsThree')}

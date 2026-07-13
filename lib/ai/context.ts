@@ -16,6 +16,12 @@ interface FinancialContext {
   level: number;
   activeDebts: { creditor: string; remaining: number; total: number }[];
   activeReceivables: { debtor: string; remaining: number; total: number }[];
+  // Optional extended context for AI features
+  cashFlowForecast?: { riskLevel: string; lowestBalance: number; lowestDate: string; projectedBalance: number };
+  healthScore?: { score: number; grade: string; topImprovement?: string };
+  upcomingRecurring?: { name: string; amount: number; nextDue: string }[];
+  anomalySummary?: { count: number; topAnomaly?: string };
+  activeRecommendations?: { title: string; kind: string }[];
 }
 
 /**
@@ -57,6 +63,43 @@ export function buildFinancialContext(ctx: FinancialContext): string {
     lines.push('');
   }
 
+  // Cash-flow forecast
+  if (ctx.cashFlowForecast) {
+    lines.push('Proyeksi arus kas:');
+    lines.push(`- Risk level: ${ctx.cashFlowForecast.riskLevel}`);
+    lines.push(`- Saldo terendah diproyeksikan: ${formatCurrency(ctx.cashFlowForecast.lowestBalance)} pada ${ctx.cashFlowForecast.lowestDate}`);
+    lines.push(`- Saldo proyeksi akhir: ${formatCurrency(ctx.cashFlowForecast.projectedBalance)}`);
+    lines.push('');
+  }
+
+  // Financial health score
+  if (ctx.healthScore) {
+    lines.push('Skor kesehatan keuangan:');
+    lines.push(`- Skor: ${ctx.healthScore.score}/100 (${ctx.healthScore.grade})`);
+    if (ctx.healthScore.topImprovement) {
+      lines.push(`- Prioritas perbaikan: ${ctx.healthScore.topImprovement}`);
+    }
+    lines.push('');
+  }
+
+  // Upcoming recurring/subscriptions
+  if (ctx.upcomingRecurring && ctx.upcomingRecurring.length > 0) {
+    lines.push('Tagihan/langganan mendatang:');
+    ctx.upcomingRecurring.forEach((r) => {
+      lines.push(`- ${r.name}: ${formatCurrency(r.amount)} jatuh tempo ${r.nextDue}`);
+    });
+    lines.push('');
+  }
+
+  // Detected anomalies
+  if (ctx.anomalySummary && ctx.anomalySummary.count > 0) {
+    lines.push(`Anomali terdeteksi: ${ctx.anomalySummary.count} transaksi mencurigakan`);
+    if (ctx.anomalySummary.topAnomaly) {
+      lines.push(`- Utama: ${ctx.anomalySummary.topAnomaly}`);
+    }
+    lines.push('');
+  }
+
   // Debts
   if (ctx.activeDebts.length > 0) {
     lines.push('Hutang aktif:');
@@ -71,6 +114,15 @@ export function buildFinancialContext(ctx: FinancialContext): string {
     lines.push('Piutang (orang yang berhutang ke user):');
     ctx.activeReceivables.forEach((r) => {
       lines.push(`- ${r.debtor}: sisa ${formatCurrency(r.remaining)} dari ${formatCurrency(r.total)}`);
+    });
+    lines.push('');
+  }
+
+  // Active AI recommendations
+  if (ctx.activeRecommendations && ctx.activeRecommendations.length > 0) {
+    lines.push('Rekomendasi AI aktif:');
+    ctx.activeRecommendations.forEach((rec) => {
+      lines.push(`- [${rec.kind}] ${rec.title}`);
     });
     lines.push('');
   }

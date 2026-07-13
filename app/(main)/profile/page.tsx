@@ -35,6 +35,12 @@ export default function ProfilePage() {
   const { wallets } = useWalletStore();
   const { isOnline, syncQueue, isSyncing, lastSyncTime, lastError, getPendingCount } = useSyncStore();
   const { user } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const levelProgress = getLevelProgress(progress.xp);
   const streakColor = getStreakColor(progress.streak_days);
 
@@ -199,6 +205,10 @@ export default function ProfilePage() {
     alert('Berhasil membuat dummy data! Silakan cek Dashboard, Transaksi, Hutang/Split, dan chat AI Advisor 🐷🚀');
     window.location.reload();
   };
+
+  if (!mounted) {
+    return <div className="min-h-screen bg-bg-primary" />;
+  }
 
   return (
     <div className="min-h-screen bg-bg-primary">

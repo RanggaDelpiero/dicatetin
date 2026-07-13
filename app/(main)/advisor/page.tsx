@@ -22,6 +22,7 @@ import { useBudgetStore } from '@/lib/stores/budget-store';
 import { buildFinancialContext } from '@/lib/ai/context';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
+import { AutopilotFeed } from '@/components/intelligence/AutopilotFeed';
 import { formatCurrency } from '@/lib/utils/currency';
 import { haptic } from '@/lib/utils/haptic';
 import { getCurrentMonthRange, formatDate } from '@/lib/utils/date';
@@ -110,14 +111,14 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
       } catch (err) {
         console.warn('[AI Advisor] Failed to parse JSON, using fallback.', err);
         parsedReport = {
-          overallScore: 50,
+          healthScore: 50,
           summary: "Laporan belum bisa ditampilkan secara rinci karena ada sedikit gangguan komunikasi dengan server AI. Namun sistem mencatat sebagian data berhasil dikalkulasi.",
-          insights: [
-            "Sebagian data pengeluaran dan pemasukan tidak dapat diekstrak secara sempurna.",
-            "Rasio tabungan dan hutang belum dapat dinilai secara akurat pada percobaan ini."
+          breakdown: [
+            { title: "Status Data", desc: "Sebagian data pengeluaran dan pemasukan tidak dapat diekstrak secara sempurna.", status: "warning" },
+            { title: "Analisis Rasio", desc: "Rasio tabungan dan hutang belum dapat dinilai secara akurat pada percobaan ini.", status: "neutral" }
           ],
           recommendations: [
-            "Silakan muat ulang (refresh) dan coba klik 'Buat Laporan AI' sekali lagi.",
+            "Silakan muat ulang (refresh) dan coba klik 'Mulai Analisis Keuangan' sekali lagi.",
             "Pastikan Anda telah memasukkan data transaksi yang cukup untuk dianalisis."
           ]
         };
@@ -260,14 +261,14 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
           </button>
 
           {/* Segmented Control */}
-          <div className="flex bg-bg-secondary p-1 rounded-xl w-[220px]">
+          <div className="flex bg-bg-secondary p-1 rounded-xl w-[220px] shadow-inner">
             <button
               onClick={() => { haptic('light'); setActiveTab('overview'); }}
               className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'overview' ? 'bg-bg-elevated text-text-primary shadow-sm' : 'text-text-tertiary'
               }`}
             >
-              Dashboard AI 📊
+              Command Center
             </button>
             <button
               onClick={() => { haptic('light'); setActiveTab('chat'); }}
@@ -275,7 +276,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
                 activeTab === 'chat' ? 'bg-bg-elevated text-text-primary shadow-sm' : 'text-text-tertiary'
               }`}
             >
-              Tanya AI 💬
+              Tanya AI
             </button>
           </div>
 
@@ -310,6 +311,9 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
         // DASHBOARD AI VIEW
         // ============================================
         <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6 scroll-touch no-scrollbar">
+          {/* Autopilot Feed */}
+          <AutopilotFeed />
+
           {isReportLoading ? (
             <div className="flex flex-col items-center justify-center py-32 text-center space-y-4">
               <div className="relative w-16 h-16 flex items-center justify-center">
@@ -323,52 +327,67 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
             </div>
           ) : !report ? (
             <div className="flex flex-col items-center justify-center py-24 text-center space-y-5">
-              <span className="text-6xl">📊</span>
+              <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] shadow-ai-glow">
+                <Sparkle size={48} weight="fill" className="text-white relative z-10" />
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-md" />
+              </div>
               <div>
-                <h3 className="text-lg font-bold text-text-primary">Analisis Keuangan AI</h3>
-                <p className="text-xs text-text-tertiary max-w-[260px] mx-auto leading-relaxed mt-1">
+                <h3 className="text-xl font-bold text-text-primary">Intelligence Center</h3>
+                <p className="text-xs text-text-tertiary max-w-[260px] mx-auto leading-relaxed mt-2">
                   Dapatkan skor kesehatan keuangan, ulasan posisi dana, grafik, serta rekomendasi hemat cerdas dari DicatetinAja AI.
                 </p>
               </div>
               <button
                 onClick={generateReport}
-                className="px-6 py-3 rounded-2xl bg-accent-secondary text-white text-sm font-bold active:scale-95 transition-all shadow-md flex items-center gap-2"
+                className="px-6 py-3.5 rounded-2xl bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-white text-sm font-bold active:scale-95 transition-all shadow-ai-glow flex items-center gap-2 mt-2"
               >
-                <Sparkle size={16} weight="fill" /> Mulai Analisis AI ✨
+                <Sparkle size={18} weight="fill" /> Mulai Analisis Keuangan
               </button>
             </div>
           ) : (
             <>
               {/* Health Score Ring Card */}
               <motion.div
-                className="rounded-[24px] bg-bg-elevated shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-6 border border-border-light text-center relative overflow-hidden flex flex-col items-center"
+                className="rounded-[28px] glass shadow-elevated p-6 border border-border-light text-center relative overflow-hidden flex flex-col items-center"
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ type: 'spring', stiffness: 200 }}
               >
                 <div className="flex justify-between items-center w-full mb-4">
-                  <span className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">Skor Kesehatan Finansial</span>
-                  <span className="text-[10px] text-text-tertiary">Diperbarui: {formatDate(report.lastGeneratedAt)}</span>
+                  <span className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Skor Finansial AI</span>
+                  <span className="text-[10px] text-text-tertiary font-medium bg-bg-secondary px-2 py-1 rounded-md">
+                    Diperbarui: {formatDate(report.lastGeneratedAt)}
+                  </span>
                 </div>
 
-                <div className="relative my-2">
+                <div className="relative my-3 drop-shadow-lg">
                   <ProgressRing
                     percentage={report.healthScore}
-                    size={120}
-                    strokeWidth={10}
-                    color={report.healthScore >= 75 ? "var(--accent-primary)" : report.healthScore >= 50 ? "#EAB308" : "var(--accent-danger)"}
+                    size={140}
+                    strokeWidth={12}
+                    color={report.healthScore >= 75 ? "url(#aiGradient)" : report.healthScore >= 50 ? "#FBBF24" : "var(--accent-danger)"}
                   >
                     <div className="flex flex-col items-center">
-                      <span className="text-3xl font-extrabold text-text-primary tabular-nums leading-none">{report.healthScore}</span>
-                      <span className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider mt-1">/ 100</span>
+                      <span className="text-4xl font-extrabold text-text-primary tabular-nums leading-none tracking-tighter">
+                        {report.healthScore}
+                      </span>
                     </div>
                   </ProgressRing>
+                  <svg style={{ height: 0, width: 0, position: 'absolute' }}>
+                    <defs>
+                      <linearGradient id="aiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="var(--ai-gradient-start)" />
+                        <stop offset="50%" stopColor="var(--ai-gradient-mid)" />
+                        <stop offset="100%" stopColor="var(--ai-gradient-end)" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
                 </div>
 
-                <h3 className="text-base font-bold text-text-primary mt-4">
-                  Kondisi Keuangan: {report.healthScore >= 80 ? 'Sangat Sehat 🎉' : report.healthScore >= 60 ? 'Cukup Aman 👍' : 'Perlu Waspada ⚠️'}
+                <h3 className="text-lg font-bold text-text-primary mt-4">
+                  {report.healthScore >= 80 ? 'Sangat Sehat 🎉' : report.healthScore >= 60 ? 'Cukup Aman 👍' : 'Perlu Waspada ⚠️'}
                 </h3>
-                <p className="text-xs text-text-secondary mt-2 leading-relaxed max-w-[320px] mx-auto">
+                <p className="text-xs text-text-secondary mt-2 leading-relaxed max-w-[320px] mx-auto font-medium">
                   {report.summary}
                 </p>
               </motion.div>
@@ -536,7 +555,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
 
               {/* Status breakdown cards */}
               <div className="grid grid-cols-1 gap-3">
-                {report.breakdown.map((b, idx) => (
+                {(report.breakdown || []).map((b, idx) => (
                   <div key={idx} className="p-4 rounded-2xl bg-bg-elevated border border-border-light flex items-start gap-3 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
                     <div className="mt-0.5">
                       {b.status === 'good' ? (
@@ -562,7 +581,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
                   Rekomendasi Hemat AI
                 </h3>
                 <ul className="space-y-3">
-                  {report.recommendations.map((rec, idx) => (
+                  {(report.recommendations || []).map((rec, idx) => (
                     <li key={idx} className="flex gap-2.5 text-xs text-text-secondary items-start">
                       <span className="flex-shrink-0 w-5 h-5 rounded-full bg-accent-primary/10 text-accent-primary flex items-center justify-center font-bold text-[10px] mt-0.5">
                         {idx + 1}
@@ -595,10 +614,10 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
                   className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-[18px] px-4 py-2.5 text-sm leading-relaxed shadow-sm ${
+                    className={`max-w-[85%] rounded-[20px] px-4 py-3 text-sm leading-relaxed shadow-sm ${
                       isUser
-                        ? 'bg-accent-secondary text-white rounded-tr-[4px]'
-                        : 'bg-bg-elevated text-text-primary rounded-tl-[4px] border border-border-light'
+                        ? 'bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-white rounded-br-[4px]'
+                        : 'bg-bg-elevated text-text-primary rounded-bl-[4px] border border-border-light'
                     }`}
                   >
                     {!isUser && <span className="text-xs text-text-tertiary block mb-1">DicatetinAja AI</span>}
@@ -665,13 +684,13 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
               <button
                 onClick={() => handleSend(input)}
                 disabled={!input.trim() || isLoading}
-                className={`w-[48px] h-[48px] rounded-2xl flex items-center justify-center text-white active:scale-95 transition-transform shadow-md ${
+                className={`w-[48px] h-[48px] rounded-2xl flex items-center justify-center text-white active:scale-95 transition-all shadow-md ${
                   input.trim() && !isLoading
-                    ? 'bg-accent-secondary'
+                    ? 'bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] shadow-ai-glow'
                     : 'bg-text-tertiary/30 cursor-not-allowed shadow-none'
                 }`}
               >
-                <PaperPlaneTilt size={20} weight="bold" />
+                <PaperPlaneTilt size={20} weight="fill" />
               </button>
             </div>
 
