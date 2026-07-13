@@ -35,7 +35,14 @@ export function CashFlowForecastCard() {
       wallets,
       transactions: [],
       recurringTransactions,
-      debts,
+      debts: debts.map(d => ({
+        id: d.id,
+        creditor: d.creditor,
+        remaining: d.remaining_amount,
+        total: d.total_amount,
+        status: d.status,
+        due_date: d.due_date
+      })),
       budgets,
       todayDate: today,
       projectionDays: days,
