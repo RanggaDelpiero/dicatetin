@@ -19,6 +19,7 @@ export interface Wallet {
   credit_statement_label?: string;
   credit_due_date?: string;
   credit_minimum_payment?: number;
+  credit_auto_reset?: boolean;
   created_at: string;
   updated_at: string;
 }

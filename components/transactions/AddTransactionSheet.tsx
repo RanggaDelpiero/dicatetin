@@ -21,8 +21,9 @@ import { getAvailableCredit } from '@/lib/finance/credit-card';
 import type { TransactionType, WalletType } from '@/lib/types';
 
 function getWalletTransactionDelta(walletType: WalletType | undefined, txType: TransactionType, amount: number) {
-  if (walletType === 'credit_card' && txType === 'expense') {
-    return { cashDelta: 0, creditOutstandingDelta: amount };
+  if (walletType === 'credit_card') {
+    if (txType === 'expense') return { cashDelta: 0, creditOutstandingDelta: amount };
+    if (txType === 'income') return { cashDelta: 0, creditOutstandingDelta: -amount };
   }
   return { cashDelta: txType === 'income' ? amount : -amount, creditOutstandingDelta: 0 };
 }

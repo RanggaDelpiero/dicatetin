@@ -127,7 +127,20 @@ export const useWalletStore = create<WalletState>()(
           }
           if (w.id === creditCardWalletId) {
             const newOutstanding = Math.max(0, (w.credit_outstanding || 0) - amount);
-            return { ...w, credit_outstanding: newOutstanding, updated_at: new Date().toISOString() };
+            let nextDueDate = w.credit_due_date;
+            
+            if (w.credit_auto_reset && nextDueDate) {
+              const d = new Date(nextDueDate);
+              d.setMonth(d.getMonth() + 1);
+              nextDueDate = d.toISOString().split('T')[0];
+            }
+            
+            return { 
+              ...w, 
+              credit_outstanding: newOutstanding, 
+              credit_due_date: nextDueDate,
+              updated_at: new Date().toISOString() 
+            };
           }
           return w;
         });

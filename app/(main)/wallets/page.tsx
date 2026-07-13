@@ -47,6 +47,7 @@ export default function WalletsPage() {
   const [creditDueDate, setCreditDueDate] = useState('');
   const [creditStatementLabel, setCreditStatementLabel] = useState('');
   const [creditMinimumPayment, setCreditMinimumPayment] = useState('');
+  const [creditAutoReset, setCreditAutoReset] = useState(false);
 
   // Pay Bill States
   const [payBillWalletId, setPayBillWalletId] = useState<string | null>(null);
@@ -73,6 +74,7 @@ export default function WalletsPage() {
         credit_due_date: creditDueDate || undefined,
         credit_statement_label: creditStatementLabel || undefined,
         credit_minimum_payment: parseInt(creditMinimumPayment, 10) || 0,
+        credit_auto_reset: creditAutoReset,
       }),
     });
     // Reset
@@ -83,6 +85,7 @@ export default function WalletsPage() {
     setCreditDueDate('');
     setCreditStatementLabel('');
     setCreditMinimumPayment('');
+    setCreditAutoReset(false);
     setShowAddSheet(false);
   };
 
@@ -413,6 +416,18 @@ export default function WalletsPage() {
                     className="w-full px-4 py-3 rounded-xl bg-bg-secondary text-text-primary outline-none text-sm"
                   />
                 </div>
+              </div>
+              <div className="flex items-center justify-between p-4 rounded-xl bg-bg-secondary">
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">Otomatis Ulang (Auto Reset)</p>
+                  <p className="text-xs text-text-tertiary mt-0.5">Jatuh tempo otomatis maju tiap bulan, limit kembali setelah dibayar.</p>
+                </div>
+                <button
+                  onClick={() => { haptic('light'); setCreditAutoReset(!creditAutoReset); }}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${creditAutoReset ? 'bg-accent-primary' : 'bg-border-light'}`}
+                >
+                  <span className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${creditAutoReset ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
               </div>
             </div>
           )}
