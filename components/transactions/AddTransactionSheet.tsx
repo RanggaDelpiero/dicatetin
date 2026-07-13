@@ -66,9 +66,10 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
         }
 
         const result = await res.json();
-        if (result.amount) {
+        const extractedAmount = result.amount || result.total_amount;
+        if (extractedAmount) {
           haptic('success');
-          setAmount(result.amount.toString());
+          setAmount(extractedAmount.toString());
           if (result.type) setType(result.type);
           if (result.date) setDate(result.date);
           if (result.note) {
@@ -139,9 +140,10 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
         }
 
         const result = await res.json();
-        if (result.amount) {
+        const extractedAmount = result.amount || result.total_amount;
+        if (extractedAmount) {
           haptic('success');
-          setAmount(result.amount.toString());
+          setAmount(extractedAmount.toString());
           if (result.type) setType(result.type);
           if (result.date) setDate(result.date);
           if (result.note) {

@@ -183,6 +183,16 @@ export function SplitBillTab() {
           );
           // Jump to items step to review
           setStep('items');
+        } else if (result.total_amount) {
+          // Fallback: no items, just total
+          setItems([{
+            id: generateId(),
+            name: result.title || 'Total',
+            price: result.total_amount.toString(),
+            qty: '1',
+            assignedTo: [],
+          }]);
+          setStep('items');
         }
         if (result.participants && Array.isArray(result.participants)) {
           setParticipants(result.participants.filter((p: string) => p !== SELF_NAME));
