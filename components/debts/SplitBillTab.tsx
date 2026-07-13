@@ -55,6 +55,8 @@ export function SplitBillTab() {
 
   // Step 2: Items
   const [items, setItems] = useState<ItemForm[]>([]);
+  const [tax, setTax] = useState('0');
+  const [service, setService] = useState('0');
 
   // Step 3: Participants
   const [participantInput, setParticipantInput] = useState('');
@@ -82,6 +84,7 @@ export function SplitBillTab() {
       amounts[name] = 0;
     });
 
+    // 1. Calculate items subtotal per person
     items.forEach((item) => {
       if (item.assignedTo.length === 0) return;
       const itemTotal = (parseInt(item.price) || 0) * (parseInt(item.qty) || 1);
@@ -93,14 +96,38 @@ export function SplitBillTab() {
       });
     });
 
+    // 2. Add proportional tax and service charge
+    const taxNum = parseInt(tax) || 0;
+    const serviceNum = parseInt(service) || 0;
+    if (taxNum > 0 || serviceNum > 0) {
+      if (itemTotals > 0) {
+        allParticipants.forEach((name) => {
+          const personalSubtotal = amounts[name];
+          const personalTax = Math.round((personalSubtotal / itemTotals) * taxNum);
+          const personalService = Math.round((personalSubtotal / itemTotals) * serviceNum);
+          amounts[name] = personalSubtotal + personalTax + personalService;
+        });
+      }
+    }
+
     return amounts;
-  }, [items, allParticipants]);
+  }, [items, allParticipants, tax, service, itemTotals]);
+
+  const unassignedItems = useMemo(() => {
+    return items.filter((i) => i.assignedTo.length === 0);
+  }, [items]);
+
+  const unassignedParticipants = useMemo(() => {
+    return allParticipants.filter((p) => !items.some((i) => i.assignedTo.includes(p)));
+  }, [allParticipants, items]);
 
   // Reset form
   const resetForm = () => {
     setStep('info');
     setTitle('');
     setItems([]);
+    setTax('0');
+    setService('0');
     setParticipantInput('');
     setParticipants([]);
     setIncludeSelf(true);
@@ -142,6 +169,8 @@ export function SplitBillTab() {
 
         // Fill form from AI result
         if (result.title) setTitle(result.title);
+        if (result.tax) setTax(result.tax.toString());
+        if (result.service) setService(result.service.toString());
         if (result.items && Array.isArray(result.items)) {
           setItems(
             result.items.map((item: { name?: string; price?: number; qty?: number }) => ({
@@ -173,6 +202,7 @@ export function SplitBillTab() {
   const handleVoiceRecord = () => {
     haptic('medium');
     const SpeechRecognition =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
@@ -189,6 +219,7 @@ export function SplitBillTab() {
       setIsRecording(true);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = async (event: any) => {
       const transcript = event.results[0][0].transcript;
       setIsRecording(false);
@@ -214,6 +245,8 @@ export function SplitBillTab() {
         haptic('success');
 
         if (result.title) setTitle(result.title);
+        if (result.tax) setTax(result.tax.toString());
+        if (result.service) setService(result.service.toString());
         if (result.items && Array.isArray(result.items)) {
           setItems(
             result.items.map((item: { name?: string; price?: number; qty?: number }) => ({
@@ -249,6 +282,7 @@ export function SplitBillTab() {
       }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onerror = (event: any) => {
       console.error(event);
       setIsRecording(false);
@@ -327,13 +361,19 @@ export function SplitBillTab() {
       assignedTo: item.assignedTo,
     }));
 
+    const taxNum = parseInt(tax) || 0;
+    const serviceNum = parseInt(service) || 0;
+    const grandTotal = itemTotals + taxNum + serviceNum;
+
     const session = addSession({
       title,
-      total_amount: itemTotals,
+      total_amount: grandTotal,
       method: 'per-item',
       participantNames: allParticipants,
       items: splitItems,
       paidBy,
+      tax: taxNum,
+      service: serviceNum,
     });
 
     // Create debts/receivables based on who paid
@@ -510,41 +550,87 @@ export function SplitBillTab() {
 
               {/* Participants */}
               <div className="space-y-2">
-                {session.participants.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between py-2 border-b border-border-light last:border-0"
-                  >
-                    <div className="flex items-center gap-2">
-                      {p.status === 'paid' || p.name === session.paidBy ? (
-                        <CheckCircle size={18} weight="fill" className="text-accent-primary" />
-                      ) : (
-                        <div className="w-[18px] h-[18px] rounded-full border-2 border-text-tertiary" />
+                {session.participants.map((p) => {
+                  const participantItems = session.items ? session.items.filter((item) => item.assignedTo.includes(p.name)) : [];
+                  const subtotal = session.items ? session.items.reduce((sum, item) => sum + item.price * item.qty, 0) : 0;
+                  const participantSubtotal = participantItems.reduce((sum, item) => {
+                    return sum + Math.round((item.price * item.qty) / item.assignedTo.length);
+                  }, 0);
+                  const participantTax = subtotal > 0 && session.tax ? Math.round((participantSubtotal / subtotal) * session.tax) : 0;
+                  const participantService = subtotal > 0 && session.service ? Math.round((participantSubtotal / subtotal) * session.service) : 0;
+
+                  return (
+                    <div
+                      key={p.id}
+                      className="py-2.5 border-b border-border-light last:border-0 last:pb-0 space-y-1"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {p.status === 'paid' || p.name === session.paidBy ? (
+                            <CheckCircle size={18} weight="fill" className="text-accent-primary" />
+                          ) : (
+                            <div className="w-[18px] h-[18px] rounded-full border-2 border-text-tertiary" />
+                          )}
+                          <span className={`text-sm font-semibold flex items-center gap-1.5 ${
+                            p.status === 'paid' || p.name === session.paidBy ? 'text-text-tertiary line-through' : 'text-text-primary'
+                          }`}>
+                            <span>{p.name}</span>
+                            {p.name === session.paidBy && (
+                              <span className="text-[10px] text-accent-primary font-normal inline-block" style={{ textDecoration: 'none' }}>
+                                (pembayar)
+                              </span>
+                            )}
+                            {(p.status === 'paid' || p.name === session.paidBy) && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent-primary/10 text-accent-primary font-bold inline-block" style={{ textDecoration: 'none' }}>
+                                Lunas
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold tabular-nums text-text-secondary">
+                            {formatCurrency(p.amount)}
+                          </span>
+                          {p.status !== 'paid' && p.name !== session.paidBy && (
+                            <button
+                              onClick={() => handleMarkPaid(session.id, p.id)}
+                              className="text-[10px] px-2 py-1.5 rounded-lg border border-text-tertiary/25 text-text-secondary hover:text-accent-primary hover:border-accent-primary transition-colors font-semibold active:scale-95"
+                            >
+                              Tandai Lunas
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Detail Pesanan Per Orang */}
+                      {participantItems.length > 0 && (
+                        <div className="pl-6 space-y-0.5 text-[10px] text-text-tertiary border-l border-border-light">
+                          {participantItems.map((item) => {
+                            const share = Math.round((item.price * item.qty) / item.assignedTo.length);
+                            return (
+                              <div key={item.id} className="flex justify-between">
+                                <span>🍔 {item.name} {item.assignedTo.length > 1 && `(Split ${item.assignedTo.length})`}</span>
+                                <span className="tabular-nums">{formatCurrency(share)}</span>
+                              </div>
+                            );
+                          })}
+                          {participantTax > 0 && (
+                            <div className="flex justify-between">
+                              <span>Pajak (Tax) proporsional</span>
+                              <span className="tabular-nums">+{formatCurrency(participantTax)}</span>
+                            </div>
+                          )}
+                          {participantService > 0 && (
+                            <div className="flex justify-between">
+                              <span>Layanan (Service) proporsional</span>
+                              <span className="tabular-nums">+{formatCurrency(participantService)}</span>
+                            </div>
+                          )}
+                        </div>
                       )}
-                      <span className={`text-sm ${
-                        p.status === 'paid' || p.name === session.paidBy ? 'text-text-tertiary line-through' : 'text-text-primary'
-                      }`}>
-                        {p.name}
-                        {p.name === session.paidBy && (
-                          <span className="text-[10px] text-accent-primary ml-1">(pembayar)</span>
-                        )}
-                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold tabular-nums text-text-secondary">
-                        {formatCurrency(p.amount)}
-                      </span>
-                      {p.status !== 'paid' && p.name !== session.paidBy && (
-                        <button
-                          onClick={() => handleMarkPaid(session.id, p.id)}
-                          className="text-[11px] px-2 py-1 rounded-lg bg-accent-primary/10 text-accent-primary font-semibold"
-                        >
-                          Lunas
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {allPaid && (
@@ -713,6 +799,41 @@ export function SplitBillTab() {
                     </div>
                   ))}
 
+                  {/* Tax & Service inputs */}
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="bg-bg-secondary rounded-xl p-3 space-y-1">
+                      <label className="text-[10px] font-semibold text-text-secondary">
+                        Pajak (Tax / PPN)
+                      </label>
+                      <div className="flex items-center bg-bg-elevated px-3 py-1.5 rounded-lg">
+                        <span className="text-[10px] text-text-tertiary mr-1.5 font-semibold">Rp</span>
+                        <input
+                          type="number"
+                          value={tax === '0' ? '' : tax}
+                          onChange={(e) => setTax(e.target.value || '0')}
+                          placeholder="0"
+                          className="w-full bg-transparent text-text-primary outline-none text-xs tabular-nums text-right font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="bg-bg-secondary rounded-xl p-3 space-y-1">
+                      <label className="text-[10px] font-semibold text-text-secondary">
+                        Biaya Layanan (Service)
+                      </label>
+                      <div className="flex items-center bg-bg-elevated px-3 py-1.5 rounded-lg">
+                        <span className="text-[10px] text-text-tertiary mr-1.5 font-semibold">Rp</span>
+                        <input
+                          type="number"
+                          value={service === '0' ? '' : service}
+                          onChange={(e) => setService(e.target.value || '0')}
+                          placeholder="0"
+                          className="w-full bg-transparent text-text-primary outline-none text-xs tabular-nums text-right font-semibold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <button
                     onClick={addItem}
                     className="w-full py-3 rounded-xl border-2 border-dashed border-text-tertiary/30 text-text-secondary text-sm font-medium flex items-center justify-center gap-1.5 hover:border-accent-secondary hover:text-accent-secondary transition-colors"
@@ -849,6 +970,27 @@ export function SplitBillTab() {
                     </div>
                   )}
 
+                  {/* Warning for unassigned items/participants */}
+                  {allParticipants.length >= 2 && (unassignedItems.length > 0 || unassignedParticipants.length > 0) && (
+                    <div className="bg-accent-danger/5 rounded-xl p-3 border border-accent-danger/10 space-y-1">
+                      <p className="text-xs font-semibold text-accent-danger flex items-center gap-1.5">
+                        ⚠️ Periksa Peserta & Menu:
+                      </p>
+                      <ul className="text-[10px] text-text-secondary list-disc pl-4 space-y-0.5">
+                        {unassignedItems.length > 0 && (
+                          <li>
+                            Baru {items.length - unassignedItems.length}/{items.length} menu yang dipilih ({unassignedItems.length} menu belum ada pembelinya, contoh: <span className="font-semibold">{unassignedItems[0].name || 'Tanpa nama'}</span>).
+                          </li>
+                        )}
+                        {unassignedParticipants.map(p => (
+                          <li key={p}>
+                            Peserta <span className="font-semibold text-accent-danger">{p}</span> belum memilih pesanan menu apapun.
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   {/* Per-person preview */}
                   {allParticipants.length >= 2 && items.some((i) => i.assignedTo.length > 0) && (
                     <div className="bg-accent-secondary/5 rounded-xl p-3 border border-accent-secondary/10">
@@ -967,9 +1109,29 @@ export function SplitBillTab() {
                       <h3 className="text-base font-bold text-text-primary">{title}</h3>
                     </div>
 
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-secondary">Total</span>
-                      <span className="font-bold text-text-primary tabular-nums">{formatCurrency(itemTotals)}</span>
+                    <div className="space-y-1.5 pt-1.5 border-t border-border-light">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-text-secondary">Subtotal Pesanan</span>
+                        <span className="font-medium text-text-primary tabular-nums">{formatCurrency(itemTotals)}</span>
+                      </div>
+                      {(parseInt(tax) || 0) > 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-text-secondary">Pajak (Tax / PPN)</span>
+                          <span className="font-medium text-text-primary tabular-nums">+{formatCurrency(parseInt(tax) || 0)}</span>
+                        </div>
+                      )}
+                      {(parseInt(service) || 0) > 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-text-secondary">Biaya Layanan (Service)</span>
+                          <span className="font-medium text-text-primary tabular-nums">+{formatCurrency(parseInt(service) || 0)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm pt-1.5 border-t border-dashed border-border-light">
+                        <span className="font-semibold text-text-primary">Total Tagihan</span>
+                        <span className="font-bold text-accent-secondary tabular-nums">
+                          {formatCurrency(itemTotals + (parseInt(tax) || 0) + (parseInt(service) || 0))}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex justify-between text-sm">
@@ -1010,19 +1172,69 @@ export function SplitBillTab() {
 
                   {/* Per-person breakdown */}
                   <div className="bg-accent-secondary/5 rounded-xl p-4 border border-accent-secondary/10">
-                    <p className="text-xs font-medium text-accent-secondary mb-2">💰 Breakdown per orang</p>
-                    {allParticipants.map((name) => (
-                      <div key={name} className="flex justify-between py-1.5 border-b border-border-light last:border-0">
-                        <span className="text-sm text-text-primary">
-                          {name}
-                          {name === SELF_NAME && <span className="text-[10px] text-accent-secondary ml-1">(kamu)</span>}
-                          {name === paidBy && <span className="text-[10px] text-accent-primary ml-1">💳</span>}
-                        </span>
-                        <span className="text-sm font-bold text-text-primary tabular-nums">
-                          {formatCurrency(perPersonAmounts[name] || 0)}
-                        </span>
-                      </div>
-                    ))}
+                    <p className="text-xs font-medium text-accent-secondary mb-3">💰 Breakdown per orang</p>
+                    <div className="space-y-3">
+                      {allParticipants.map((name) => {
+                        const personalItems = items.filter((item) => item.assignedTo.includes(name));
+                        const personalSubtotal = personalItems.reduce((sum, item) => {
+                          const itemTotal = (parseInt(item.price) || 0) * (parseInt(item.qty) || 1);
+                          return sum + Math.round(itemTotal / item.assignedTo.length);
+                        }, 0);
+                        
+                        const taxNum = parseInt(tax) || 0;
+                        const serviceNum = parseInt(service) || 0;
+                        
+                        const personalTax = itemTotals > 0 ? Math.round((personalSubtotal / itemTotals) * taxNum) : 0;
+                        const personalService = itemTotals > 0 ? Math.round((personalSubtotal / itemTotals) * serviceNum) : 0;
+
+                        return (
+                          <div key={name} className="py-2 border-b border-border-light last:border-0 last:pb-0 space-y-1">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-bold text-text-primary">
+                                {name}
+                                {name === SELF_NAME && <span className="text-[10px] text-accent-secondary ml-1">(kamu)</span>}
+                                {name === paidBy && <span className="text-[10px] text-accent-primary ml-1">💳</span>}
+                              </span>
+                              <span className="text-sm font-bold text-text-primary tabular-nums">
+                                {formatCurrency(perPersonAmounts[name] || 0)}
+                              </span>
+                            </div>
+
+                            {/* Breakdown details */}
+                            <div className="pl-3.5 space-y-0.5 text-[10px] text-text-secondary border-l-2 border-accent-secondary/20">
+                              {personalItems.map((item) => {
+                                const itemShare = Math.round(((parseInt(item.price) || 0) * (parseInt(item.qty) || 1)) / item.assignedTo.length);
+                                return (
+                                  <div key={item.id} className="flex justify-between">
+                                    <span>
+                                      🍔 {item.name} 
+                                      {item.assignedTo.length > 1 && (
+                                        <span className="text-[9px] text-text-tertiary ml-1">
+                                          (Split {item.assignedTo.length})
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="tabular-nums">{formatCurrency(itemShare)}</span>
+                                  </div>
+                                );
+                              })}
+                              {personalTax > 0 && (
+                                <div className="flex justify-between text-text-tertiary">
+                                  <span>Pajak (Tax) proporsional</span>
+                                  <span className="tabular-nums">+{formatCurrency(personalTax)}</span>
+                                </div>
+                              )}
+                              {personalService > 0 && (
+                                <div className="flex justify-between text-text-tertiary">
+                                  <span>Layanan (Service) proporsional</span>
+                                  <span className="tabular-nums">+{formatCurrency(personalService)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </motion.div>
               )}

@@ -115,6 +115,8 @@ export interface SplitBillSession {
   participants: SplitParticipant[];
   items: SplitBillItem[];      // list of items/menu in the bill
   paidBy: string;              // name of person who paid ("Saya" or participant name)
+  tax?: number;
+  service?: number;
   created_at: string;
 }
 

@@ -105,7 +105,7 @@ async function callAI(
           ...messages,
         ],
         temperature: 0.1,
-        max_tokens: 1000,
+        max_tokens: 4000,
         stream: false,
       }),
     });
@@ -117,8 +117,51 @@ async function callAI(
     }
 
     const rawText = await response.text();
-    const cleanedText = rawText.replace(/data:\s*\[DONE\]\s*$/, '').trim();
-    const resData = JSON.parse(cleanedText);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let resData: any = null;
+    try {
+      const cleanedText = rawText.replace(/data:\s*\[DONE\]\s*$/, '').trim();
+      resData = JSON.parse(cleanedText);
+    } catch {
+      // If direct JSON parse fails, check if it contains SSE stream data (data: {...})
+      if (rawText.includes('data: ')) {
+        let contentAccumulator = '';
+        const lines = rawText.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            const dataStr = trimmed.slice(6).trim();
+            if (dataStr === '[DONE]') continue;
+            try {
+              const chunk = JSON.parse(dataStr);
+              if (chunk.choices && chunk.choices[0]?.delta?.content) {
+                contentAccumulator += chunk.choices[0].delta.content;
+              } else if (chunk.choices && chunk.choices[0]?.message?.content) {
+                contentAccumulator += chunk.choices[0].message.content;
+              }
+              if (!resData && chunk.id) {
+                resData = { ...chunk };
+              }
+            } catch {
+              // ignore malformed lines
+            }
+          }
+        }
+        if (contentAccumulator && resData) {
+          resData.choices = [{
+            message: {
+              content: contentAccumulator,
+              role: 'assistant'
+            }
+          }];
+        }
+      }
+    }
+
+    if (!resData) {
+      console.error('[AI Extract] Failed to parse response. Raw response:', rawText.slice(0, 1000));
+      return { content: null, error: 'Gagal menguraikan respon dari server AI.', status: 500 };
+    }
 
     // Check for API errors in the payload (some proxies return errors on 200)
     if (resData.error) {
@@ -203,12 +246,16 @@ ${mode === 'transaction' ? `Format output untuk transaksi:
   "type": "expense",
   "amount": 25000,
   "category": "Makan & Minum",
-  "note": "Nasi goreng di warung"
+  "note": "Nasi goreng di warung",
+  "date": "YYYY-MM-DD"
 }
 
-Field type bisa "expense" atau "income". Pilih category dari daftar yang tersedia.` : `Format output untuk split bill:
+Field type bisa "expense" atau "income". Pilih category dari daftar yang tersedia. Field date adalah tanggal transaksi dalam format YYYY-MM-DD (contoh: 2026-07-10). Jika tidak tertera di struk atau tidak disebutkan, gunakan tanggal hari ini yaitu: ${new Date().toLocaleDateString('en-CA')}.` : `Format output untuk split bill:
 {
   "title": "Makan Siang Bareng",
+  "subtotal": 125000,
+  "tax": 12500,
+  "service": 12500,
   "total_amount": 150000,
   "items": [
     {"name": "Nasi Goreng", "price": 25000, "qty": 1},
@@ -218,9 +265,12 @@ Field type bisa "expense" atau "income". Pilih category dari daftar yang tersedi
 }
 
 PENTING untuk split bill:
-- Selalu sertakan field "items" berisi daftar item/menu yang terdeteksi
+- Selalu sertakan field "items" berisi daftar item/menu makanan/minuman yang terdeteksi (JANGAN masukkan tax, pajak, service charge, PB1, pembulatan, atau service fee ke dalam "items")
 - Setiap item harus punya: name (string), price (integer), qty (integer, default 1)
-- "total_amount" adalah total keseluruhan tagihan
+- "subtotal" adalah jumlah harga seluruh item sebelum pajak & service charge
+- "tax" adalah jumlah pajak (PPN, PB1, Tax) jika ada
+- "service" adalah jumlah service charge (layanan, service fee) jika ada
+- "total_amount" adalah total keseluruhan tagihan (subtotal + tax + service)
 - Jika ada nama orang yang terdeteksi, tambahkan field "participants": ["nama1", "nama2"]
 - Jika tidak ada nama orang, JANGAN sertakan field "participants"`}`;
 
@@ -271,7 +321,18 @@ PENTING untuk split bill:
     const retryMessages: Record<string, unknown>[] = [
       {
         role: 'user',
-        content: `Output sebelumnya tidak valid JSON. Ini output aslinya:\n\n${firstAttempt.content}\n\nTolong perbaiki menjadi JSON valid saja (langsung dimulai dengan {, tanpa markdown, tanpa penjelasan). Pertahankan semua data yang ada.`,
+        content: type === 'photo' ? [
+          {
+            type: 'text',
+            text: `Output sebelumnya tidak valid JSON. Ini output aslinya:\n\n${firstAttempt.content}\n\nTolong perbaiki menjadi JSON valid saja (langsung dimulai dengan {, tanpa markdown, tanpa penjelasan). Pertahankan semua data yang ada. Gunakan gambar struk asli sebagai referensi jika data sebelumnya terpotong atau rusak.`,
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: image,
+            },
+          },
+        ] : `Output sebelumnya tidak valid JSON. Ini output aslinya:\n\n${firstAttempt.content}\n\nTolong perbaiki menjadi JSON valid saja (langsung dimulai dengan {, tanpa markdown, tanpa penjelasan). Pertahankan semua data yang ada.`,
       },
     ];
 

@@ -18,6 +18,8 @@ interface SplitBillState {
     items?: SplitBillItem[];
     paidBy: string;
     customAmounts?: Record<string, number>;
+    tax?: number;
+    service?: number;
   }) => SplitBillSession;
   deleteSession: (id: string) => void;
   markParticipantPaid: (sessionId: string, participantId: string) => void;
@@ -56,7 +58,7 @@ export const useSplitBillStore = create<SplitBillState>()(
     (set, get) => ({
       sessions: [],
 
-      addSession: ({ title, total_amount, method, participantNames, items = [], paidBy, customAmounts }) => {
+      addSession: ({ title, total_amount, method, participantNames, items = [], paidBy, customAmounts, tax = 0, service = 0 }) => {
         const sessionId = generateId();
 
         // Calculate per-person amounts based on method
@@ -64,6 +66,17 @@ export const useSplitBillStore = create<SplitBillState>()(
 
         if (method === 'per-item' && items.length > 0) {
           perPersonAmounts = calculatePerItemAmounts(items, participantNames);
+          
+          // Proportional tax and service calculation!
+          const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+          if (subtotal > 0) {
+            participantNames.forEach((name) => {
+              const personalSubtotal = perPersonAmounts[name] || 0;
+              const personalTax = Math.round((personalSubtotal / subtotal) * tax);
+              const personalService = Math.round((personalSubtotal / subtotal) * service);
+              perPersonAmounts[name] = personalSubtotal + personalTax + personalService;
+            });
+          }
         } else if (method === 'custom' && customAmounts) {
           participantNames.forEach((name) => {
             perPersonAmounts[name] = customAmounts[name] || 0;
@@ -93,6 +106,8 @@ export const useSplitBillStore = create<SplitBillState>()(
           participants,
           items,
           paidBy,
+          tax,
+          service,
           created_at: new Date().toISOString(),
         };
 

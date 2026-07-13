@@ -70,6 +70,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
           haptic('success');
           setAmount(result.amount.toString());
           if (result.type) setType(result.type);
+          if (result.date) setDate(result.date);
           if (result.note) {
             setNote(result.note);
             setShowNote(true);
@@ -142,6 +143,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
           haptic('success');
           setAmount(result.amount.toString());
           if (result.type) setType(result.type);
+          if (result.date) setDate(result.date);
           if (result.note) {
             setNote(result.note);
             setShowNote(true);

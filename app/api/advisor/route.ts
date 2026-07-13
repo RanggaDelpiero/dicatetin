@@ -106,8 +106,53 @@ export async function POST(request: NextRequest) {
     }
 
     const rawText = await apiResponse.text();
-    const cleanedText = rawText.replace(/data:\s*\[DONE\]\s*$/, '').trim();
-    const data = JSON.parse(cleanedText);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let data: any = null;
+    try {
+      const cleanedText = rawText.replace(/data:\s*\[DONE\]\s*$/, '').trim();
+      data = JSON.parse(cleanedText);
+    } catch {
+      if (rawText.includes('data: ')) {
+        let contentAccumulator = '';
+        const lines = rawText.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            const dataStr = trimmed.slice(6).trim();
+            if (dataStr === '[DONE]') continue;
+            try {
+              const chunk = JSON.parse(dataStr);
+              if (chunk.choices && chunk.choices[0]?.delta?.content) {
+                contentAccumulator += chunk.choices[0].delta.content;
+              } else if (chunk.choices && chunk.choices[0]?.message?.content) {
+                contentAccumulator += chunk.choices[0].message.content;
+              }
+              if (!data && chunk.id) {
+                data = { ...chunk };
+              }
+            } catch {
+              // ignore malformed lines
+            }
+          }
+        }
+        if (contentAccumulator && data) {
+          data.choices = [{
+            message: {
+              content: contentAccumulator,
+              role: 'assistant'
+            }
+          }];
+        }
+      }
+    }
+
+    if (!data) {
+      console.error('[AI Advisor] Failed to parse response. Raw response:', rawText.slice(0, 1000));
+      return Response.json(
+        { error: 'Gagal menguraikan respon dari server AI.' },
+        { status: 500 }
+      );
+    }
 
     // Extract assistant reply — handle both OpenAI and Anthropic response formats
     let reply = '';
