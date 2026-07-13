@@ -53,11 +53,13 @@ export const useBudgetStore = create<BudgetState>()(
       },
 
       getTotalWeeklyBudget: () => {
-        return Math.round(get().getTotalMonthlyBudget() / 4);
+        return Math.round(get().getTotalMonthlyBudget() / 4.33); // More accurate average weeks in month
       },
 
       getTotalDailyBudget: () => {
-        return Math.round(get().getTotalMonthlyBudget() / 30);
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        return Math.round(get().getTotalMonthlyBudget() / daysInMonth);
       },
 
       clearBudgets: () => set({ budgets: [] }),

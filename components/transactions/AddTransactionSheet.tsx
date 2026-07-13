@@ -17,7 +17,15 @@ import { getToday } from '@/lib/utils/date';
 import { haptic } from '@/lib/utils/haptic';
 import { XP_REWARDS } from '@/lib/gamification/xp';
 import { compressImage } from '@/lib/utils/image';
-import type { TransactionType } from '@/lib/types';
+import { getAvailableCredit } from '@/lib/finance/credit-card';
+import type { TransactionType, WalletType } from '@/lib/types';
+
+function getWalletTransactionDelta(walletType: WalletType | undefined, txType: TransactionType, amount: number) {
+  if (walletType === 'credit_card' && txType === 'expense') {
+    return { cashDelta: 0, creditOutstandingDelta: amount };
+  }
+  return { cashDelta: txType === 'income' ? amount : -amount, creditOutstandingDelta: 0 };
+}
 
 interface AddTransactionSheetProps {
   isOpen: boolean;
@@ -182,7 +190,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
   };
 
   const { addTransaction, updateTransaction, transactions, categories } = useTransactionStore();
-  const { wallets, updateBalance } = useWalletStore();
+  const { wallets, updateBalance, updateWallet } = useWalletStore();
   const { addXP, recordActivity } = useGamificationStore();
 
   // Load existing transaction if editing
@@ -267,8 +275,19 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
     if (editTransactionId) {
       const existingTx = transactions.find(t => t.id === editTransactionId);
       if (existingTx) {
+        const existingWallet = wallets.find(w => w.id === existingTx.wallet_id);
+        const newWallet = wallets.find(w => w.id === selectedWalletId);
+
         // Reverse previous balance effect
-        updateBalance(existingTx.wallet_id, existingTx.type === 'income' ? -existingTx.amount : existingTx.amount);
+        const oldDelta = getWalletTransactionDelta(existingWallet?.type, existingTx.type, existingTx.amount);
+        if (oldDelta.cashDelta !== 0) {
+          updateBalance(existingTx.wallet_id, -oldDelta.cashDelta);
+        }
+        if (oldDelta.creditOutstandingDelta !== 0 && existingWallet) {
+          updateWallet(existingTx.wallet_id, {
+            credit_outstanding: Math.max(0, (existingWallet.credit_outstanding || 0) - oldDelta.creditOutstandingDelta)
+          });
+        }
 
         // Update transaction
         updateTransaction(editTransactionId, {
@@ -281,7 +300,15 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
         });
 
         // Apply new balance effect
-        updateBalance(selectedWalletId, type === 'income' ? numAmount : -numAmount);
+        const newDelta = getWalletTransactionDelta(newWallet?.type, type, numAmount);
+        if (newDelta.cashDelta !== 0) {
+          updateBalance(selectedWalletId, newDelta.cashDelta);
+        }
+        if (newDelta.creditOutstandingDelta !== 0 && newWallet) {
+          updateWallet(selectedWalletId, {
+            credit_outstanding: (newWallet.credit_outstanding || 0) + newDelta.creditOutstandingDelta
+          });
+        }
       }
     } else {
       // Add transaction
@@ -294,11 +321,21 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
         note: note || undefined,
       });
 
+      const newWallet = wallets.find(w => w.id === selectedWalletId);
+      const newDelta = getWalletTransactionDelta(newWallet?.type, type, numAmount);
+
       // Update wallet balance
-      updateBalance(selectedWalletId, type === 'income' ? numAmount : -numAmount);
+      if (newDelta.cashDelta !== 0) {
+        updateBalance(selectedWalletId, newDelta.cashDelta);
+      }
+      if (newDelta.creditOutstandingDelta !== 0 && newWallet) {
+        updateWallet(selectedWalletId, {
+          credit_outstanding: (newWallet.credit_outstanding || 0) + newDelta.creditOutstandingDelta
+        });
+      }
 
       // Gamification
-    addXP(XP_REWARDS.ADD_TRANSACTION);
+      addXP(XP_REWARDS.ADD_TRANSACTION);
       recordActivity();
     }
 
@@ -368,7 +405,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
         </div>
 
         {/* Wallet Selector */}
-        <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
+        <div className="flex gap-2 mb-2 overflow-x-auto no-scrollbar pb-1">
           {wallets.map((wallet) => (
             <button
               key={wallet.id}
@@ -380,10 +417,19 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
               }`}
             >
               <DynamicIcon name={wallet.icon} size={16} weight="duotone" />
-              {wallet.name}
+              {wallet.type === 'credit_card'
+                ? `${wallet.name} · sisa limit ${formatCurrency(getAvailableCredit(wallet.credit_limit, wallet.credit_outstanding))}`
+                : wallet.name}
             </button>
           ))}
         </div>
+
+        {/* Credit Card Hint */}
+        {wallets.find(w => w.id === selectedWalletId)?.type === 'credit_card' && type === 'expense' && (
+          <div className="px-3 py-2 mb-4 rounded-lg bg-accent-secondary/10 text-accent-secondary text-xs">
+            💡 Transaksi ini masuk pengeluaran, tapi pembayarannya nanti dicatat saat kamu bayar tagihan.
+          </div>
+        )}
 
         {/* Category Grid */}
         <div className="mb-3 overflow-hidden">

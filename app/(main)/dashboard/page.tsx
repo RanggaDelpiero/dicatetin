@@ -6,13 +6,15 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowUp, ArrowDown, Sparkle, CaretRight, Robot, Plus, PencilSimple } from '@phosphor-icons/react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { ArrowUp, ArrowDown, Sparkle, CaretRight, Robot, Plus, PencilSimple, Bell, Cloud, CloudCheck, CloudSlash } from '@phosphor-icons/react';
 import { StreakFlame } from '@/components/gamification/StreakFlame';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { DonutChart } from '@/components/charts/DonutChart';
 import { BudgetSettingsSheet } from '@/components/budget/BudgetSettingsSheet';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { InsightsCarousel } from '@/components/insights/InsightsCarousel';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useWalletStore } from '@/lib/stores/wallet-store';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
@@ -20,6 +22,9 @@ import { useBudgetStore } from '@/lib/stores/budget-store';
 import { useDebtStore } from '@/lib/stores/debt-store';
 import { useReceivableStore } from '@/lib/stores/receivable-store';
 import { useRecurringStore } from '@/lib/stores/recurring-store';
+import { useNotificationStore } from '@/lib/stores/notification-store';
+import { useSyncStore } from '@/lib/stores/sync-store';
+import { generateInsights } from '@/lib/insights/insights';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/currency';
 import { getCurrentMonthRange, getMonthName, formatRelativeDate } from '@/lib/utils/date';
 import { getLevelProgress, getLevelTitle } from '@/lib/gamification/xp';
@@ -32,13 +37,18 @@ export default function DashboardPage() {
   const { transactions, getCategoryTotals, getTotalByType } = useTransactionStore();
   const { wallets, getTotalBalance } = useWalletStore();
   const { progress } = useGamificationStore();
-  const { checkAndTriggerRecurring } = useRecurringStore();
+  const { checkAndTriggerRecurring, recurringTransactions } = useRecurringStore();
+  const { generateNotifications, getUnreadCount } = useNotificationStore();
+  const { isOnline, isSyncing, syncQueue } = useSyncStore();
 
   useEffect(() => {
     checkAndTriggerRecurring();
-  }, [checkAndTriggerRecurring]);
+    generateNotifications();
+  }, [checkAndTriggerRecurring, generateNotifications]);
 
   const [showBudgetSheet, setShowBudgetSheet] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const unreadCount = getUnreadCount();
 
   const { getTotalDailyBudget } = useBudgetStore();
   const dailyBudgetLimit = getTotalDailyBudget();
@@ -57,10 +67,16 @@ export default function DashboardPage() {
 
   const { start, end } = getCurrentMonthRange();
   const totalBalance = getTotalBalance();
+  
+  const totalCCOutstanding = useMemo(() => {
+    return wallets
+      .filter(w => w.type === 'credit_card')
+      .reduce((sum, w) => sum + (w.credit_outstanding || 0), 0);
+  }, [wallets]);
 
   const totalReceivables = useReceivableStore((state) => state.getTotalReceivable());
   const totalDebts = useDebtStore((state) => state.getTotalDebt());
-  const netWorth = totalBalance + totalReceivables - totalDebts;
+  const netWorth = totalBalance + totalReceivables - totalDebts - totalCCOutstanding;
 
   const monthIncome = getTotalByType('income', start, end);
   const monthExpense = getTotalByType('expense', start, end);
@@ -85,6 +101,21 @@ export default function DashboardPage() {
       color: ct.color,
     }));
   }, [categoryTotals]);
+
+  // Financial insights
+  const debtsData = useDebtStore.getState().getActiveDebts();
+  const budgetsData = useBudgetStore.getState().budgets;
+  const insightsCategories = useTransactionStore.getState().categories;
+  const insights = useMemo(() => {
+    return generateInsights(
+      transactions,
+      insightsCategories,
+      budgetsData,
+      debtsData,
+      recurringTransactions,
+      new Date(),
+    );
+  }, [transactions, insightsCategories, budgetsData, debtsData, recurringTransactions]);
 
   return (
     <div ref={scrollRef} className="min-h-screen bg-bg-primary">
@@ -112,6 +143,62 @@ export default function DashboardPage() {
               </motion.h1>
             </div>
             <div className="flex items-center gap-2">
+              <AnimatePresence mode="wait">
+                {!isOnline ? (
+                  <motion.div
+                    key="offline"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-danger/10 text-accent-danger"
+                    title="Offline - Menunggu Koneksi"
+                  >
+                    <CloudSlash size={18} weight="duotone" />
+                  </motion.div>
+                ) : syncQueue.length > 0 || isSyncing ? (
+                  <motion.div
+                    key="syncing"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-secondary/10 text-accent-secondary"
+                    title="Sinkronisasi ke Cloud..."
+                  >
+                    <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+                      <Cloud size={18} weight="duotone" />
+                    </motion.div>
+                    {syncQueue.length > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-accent-secondary text-white text-[8px] font-bold flex items-center justify-center">
+                        {syncQueue.length}
+                      </span>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="synced"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-primary/10 text-accent-primary"
+                    title="Tersinkronisasi"
+                  >
+                    <CloudCheck size={18} weight="duotone" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
+                onClick={() => { setShowNotifications(true); haptic('light'); }}
+                className="relative flex items-center justify-center w-9 h-9 rounded-full bg-accent-warning/15 text-accent-warning active:scale-95 transition-transform"
+                aria-label="Notifikasi"
+              >
+                <Bell size={20} weight="fill" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-accent-danger text-white text-[9px] font-bold flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
               <Link
                 href="/advisor"
                 onClick={() => haptic('light')}
@@ -208,23 +295,29 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border-light text-center">
+          <div className="grid grid-cols-4 gap-2 pt-3 border-t border-border-light text-center">
             <div>
               <p className="text-[9px] text-text-tertiary uppercase font-semibold">Aset (Saldo)</p>
               <p className="text-xs font-bold text-accent-primary tabular-nums mt-0.5">
                 {formatCurrencyCompact(totalBalance)}
               </p>
             </div>
-            <div className="border-x border-border-light">
+            <div className="border-l border-border-light pl-2">
               <p className="text-[9px] text-text-tertiary uppercase font-semibold">Piutang</p>
               <p className="text-xs font-bold text-accent-secondary tabular-nums mt-0.5">
                 {formatCurrencyCompact(totalReceivables)}
               </p>
             </div>
-            <div>
-              <p className="text-[9px] text-text-tertiary uppercase font-semibold">Kewajiban</p>
+            <div className="border-l border-border-light pl-2">
+              <p className="text-[9px] text-text-tertiary uppercase font-semibold">Hutang Pribadi</p>
               <p className="text-xs font-bold text-accent-danger tabular-nums mt-0.5">
                 {formatCurrencyCompact(totalDebts)}
+              </p>
+            </div>
+            <div className="border-l border-border-light pl-2">
+              <p className="text-[9px] text-text-tertiary uppercase font-semibold">Tagihan CC</p>
+              <p className="text-xs font-bold text-accent-danger tabular-nums mt-0.5">
+                {formatCurrencyCompact(totalCCOutstanding)}
               </p>
             </div>
           </div>
@@ -246,36 +339,6 @@ export default function DashboardPage() {
             {formatCurrency(totalBalance)}
           </h2>
 
-          {/* Wallet pills */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
-            {wallets.map((wallet, index) => (
-              <motion.div
-                key={wallet.id}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl flex-shrink-0 transition-all ${
-                  index === activeWalletIndex
-                    ? 'bg-white/25 shadow-lg'
-                    : 'bg-white/10'
-                }`}
-                onClick={() => setActiveWalletIndex(index)}
-                whileTap={{ scale: 0.97 }}
-              >
-                <DynamicIcon name={wallet.icon} size={16} weight="fill" />
-                <span className="text-xs font-medium whitespace-nowrap">{wallet.name}</span>
-                <span className="text-xs font-bold tabular-nums">
-                  {formatCurrencyCompact(wallet.balance)}
-                </span>
-              </motion.div>
-            ))}
-            <Link
-              href="/wallets"
-              onClick={() => haptic('light')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl flex-shrink-0 bg-white/10 text-white/90 active:scale-95 transition-all text-xs font-semibold"
-            >
-              <Plus size={14} weight="bold" />
-              Kelola
-            </Link>
-          </div>
-
           {/* Income/Expense summary */}
           <div className="flex gap-4 mt-4 pt-4 border-t border-white/15">
             <div className="flex items-center gap-2 flex-1">
@@ -296,6 +359,48 @@ export default function DashboardPage() {
                 <p className="text-sm font-bold tabular-nums">{formatCurrencyCompact(monthExpense)}</p>
               </div>
             </div>
+          </div>
+        </motion.div>
+
+        {/* Kantong Saya (Wallets Section) */}
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.38 }}
+        >
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="text-sm font-bold text-text-primary">Kantong Saya</h3>
+            <Link href="/wallets" className="text-xs font-semibold text-accent-primary" onClick={() => haptic('light')}>
+              Kelola
+            </Link>
+          </div>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-5 px-5 pb-2">
+            {wallets.map((wallet) => (
+              <Link
+                href="/wallets"
+                key={wallet.id}
+                onClick={() => haptic('light')}
+                className="flex flex-col min-w-[130px] p-3 rounded-2xl bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] active:scale-95 transition-all"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1.5 rounded-lg text-white" style={{ backgroundColor: wallet.color }}>
+                    <DynamicIcon name={wallet.icon} size={16} weight="fill" />
+                  </div>
+                  <span className="text-xs font-semibold text-text-primary truncate">{wallet.name}</span>
+                </div>
+                <div className="mt-auto">
+                  <p className="text-[10px] text-text-tertiary mb-0.5">
+                    {wallet.type === 'credit_card' ? 'Total Tagihan' : 'Saldo'}
+                  </p>
+                  <p className="text-sm font-bold text-text-primary tabular-nums">
+                    {wallet.type === 'credit_card' 
+                      ? formatCurrencyCompact(wallet.credit_outstanding || 0) 
+                      : formatCurrencyCompact(wallet.balance)}
+                  </p>
+                </div>
+              </Link>
+            ))}
           </div>
         </motion.div>
 
@@ -372,31 +477,16 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
-        {/* Highlight Card */}
+        {/* Financial Insights Carousel (replaces static Highlight card — PRD §5.8) */}
         <motion.div
-          className="rounded-[14px] bg-gradient-to-r from-accent-secondary/10 to-accent-primary/10 border border-accent-secondary/20 p-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.55 }}
         >
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-accent-secondary/20 flex items-center justify-center flex-shrink-0">
-              <Sparkle size={20} weight="duotone" className="text-accent-secondary" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-text-primary mb-1">Highlight Minggu Ini</h3>
-              <p className="text-xs text-text-secondary leading-relaxed">
-                {monthExpense > 0
-                  ? `Pengeluaran terbesar kamu bulan ini di kategori ${categoryTotals[0]?.category || 'belum ada'} (${categoryTotals[0]?.percentage || 0}%). `
-                  : 'Belum ada pengeluaran bulan ini. '}
-                {monthIncome > monthExpense
-                  ? 'Bagus! Pemasukan masih lebih besar dari pengeluaran 💰'
-                  : monthExpense > 0
-                  ? 'Yuk kontrol pengeluaran biar lebih seimbang! 💪'
-                  : 'Mulai catat transaksi pertamamu! 🚀'}
-              </p>
-            </div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[15px] font-semibold text-text-primary">Insight Keuangan ✨</h3>
           </div>
+          <InsightsCarousel insights={insights} />
         </motion.div>
 
         {/* Recent Transactions */}
@@ -473,6 +563,7 @@ export default function DashboardPage() {
         </motion.div>
       </div>
       <BudgetSettingsSheet isOpen={showBudgetSheet} onClose={() => setShowBudgetSheet(false)} />
+      <NotificationCenter isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
     </div>
   );
 }

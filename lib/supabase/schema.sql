@@ -48,6 +48,11 @@ create table public.wallets (
   color text not null, -- hex color
   icon text not null, -- icon identifier
   "order" integer default 0 not null,
+  credit_limit bigint,
+  credit_outstanding bigint,
+  credit_statement_label text,
+  credit_due_date date,
+  credit_minimum_payment bigint,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -70,6 +75,8 @@ create table public.transactions (
   note text,
   receipt_url text,
   date timestamp with time zone not null,
+  payment_kind text,
+  credit_card_wallet_id uuid references public.wallets(id) on delete set null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

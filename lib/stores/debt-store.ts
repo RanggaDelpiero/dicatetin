@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Debt, DebtStatus } from '@/lib/types';
 import { generateId } from '@/lib/data/presets';
+import { getCurrentUserId } from '@/lib/stores/auth-store';
 
 interface DebtPayment {
   id: string;
@@ -39,7 +40,7 @@ export const useDebtStore = create<DebtState>()(
         const newDebt: Debt = {
           ...debt,
           id: generateId(),
-          user_id: 'local-user',
+          user_id: getCurrentUserId(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };

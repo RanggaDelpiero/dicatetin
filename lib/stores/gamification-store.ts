@@ -8,6 +8,7 @@ import { UserProgress } from '@/lib/types';
 import { calculateLevel } from '@/lib/gamification/xp';
 import { calculateStreak, hasLoggedToday } from '@/lib/gamification/streak';
 import { getToday } from '@/lib/utils/date';
+import { getCurrentUserId } from '@/lib/stores/auth-store';
 
 interface GamificationState {
   progress: UserProgress;
@@ -24,7 +25,7 @@ interface GamificationState {
 
 const initialProgress: UserProgress = {
   id: 'local-progress',
-  user_id: 'local-user',
+  user_id: getCurrentUserId(),
   xp: 0,
   level: 1,
   streak_days: 0,

@@ -14,6 +14,11 @@ export interface Wallet {
   color: string;   // hex color
   icon: string;    // icon name from Phosphor
   order: number;
+  credit_limit?: number;
+  credit_outstanding?: number;
+  credit_statement_label?: string;
+  credit_due_date?: string;
+  credit_minimum_payment?: number;
   created_at: string;
   updated_at: string;
 }
@@ -29,10 +34,28 @@ export interface Category {
   icon: string;
   color: string;
   order: number;
+  isArchived?: boolean;
+  isCustom?: boolean;
 }
 
 // ---- Transaction ----
 export type TransactionType = 'income' | 'expense' | 'transfer';
+
+export type TransactionSource = 'manual' | 'photo' | 'voice';
+
+export interface TransactionEditEntry {
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
+  editedAt: string;
+}
+
+export interface TransactionExtractionData {
+  originalText?: string;
+  originalImageUrl?: string;
+  aiConfidence?: 'high' | 'medium' | 'low';
+  extractedAt: string;
+}
 
 export interface Transaction {
   id: string;
@@ -51,6 +74,13 @@ export interface Transaction {
   date: string; // ISO date
   created_at: string;
   updated_at: string;
+  // Audit trail
+  sourceType?: TransactionSource;
+  editHistory?: TransactionEditEntry[];
+  extractionData?: TransactionExtractionData;
+  // CC tracking
+  payment_kind?: 'normal' | 'credit_card_payment';
+  credit_card_wallet_id?: string;
 }
 
 // ---- Debt (Hutang Saya) ----

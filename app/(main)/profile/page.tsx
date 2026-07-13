@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Moon, Sun, SignOut, Trash, Info, Sparkle, User, ArrowsClockwise } from '@phosphor-icons/react';
+import { Moon, Sun, SignOut, Trash, Info, Sparkle, User, ArrowsClockwise, CloudArrowUp, CloudCheck, CloudSlash } from '@phosphor-icons/react';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
@@ -19,28 +19,22 @@ import { getLevelProgress, getLevelTitle } from '@/lib/gamification/xp';
 import { getStreakColor, getStreakMessage } from '@/lib/gamification/streak';
 import { BADGES } from '@/lib/gamification/badges';
 import { haptic } from '@/lib/utils/haptic';
+import { useSyncStore } from '@/lib/stores/sync-store';
+import { formatRelativeDate } from '@/lib/utils/date';
+import { getCurrentUserId } from '@/lib/stores/auth-store';
+import { useAuthStore } from '@/lib/stores/auth-store';
 import { supabase } from '@/lib/supabase/client';
+import { syncDataOnLogin } from '@/lib/supabase/syncManager';
+import { useBudgetStore } from '@/lib/stores/budget-store';
+import { useRecurringStore } from '@/lib/stores/recurring-store';
+import { useNotificationStore } from '@/lib/stores/notification-store';
 
 export default function ProfilePage() {
   const { progress } = useGamificationStore();
   const { transactions } = useTransactionStore();
   const { wallets } = useWalletStore();
-
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-    });
-  }, []);
-
-  const handleSignOut = async () => {
-    haptic('medium');
-    await supabase.auth.signOut();
-    setUser(null);
-    window.location.reload();
-  };
-
+  const { isOnline, syncQueue, isSyncing, lastSyncTime, lastError, getPendingCount } = useSyncStore();
+  const { user } = useAuthStore();
   const levelProgress = getLevelProgress(progress.xp);
   const streakColor = getStreakColor(progress.streak_days);
 
@@ -52,6 +46,19 @@ export default function ProfilePage() {
     walletStore.updateWallet('wallet-cash', { balance: 450000 });
     walletStore.updateWallet('wallet-bca', { balance: 11250000 });
     walletStore.updateWallet('wallet-gopay', { balance: 840000 });
+    // Add Credit Card
+
+    walletStore.addWallet({
+      name: 'Mandiri Shopee Card',
+      type: 'credit_card',
+      balance: 0,
+      color: '#F97316',
+      icon: 'CreditCard',
+      credit_limit: 15000000,
+      credit_outstanding: 2500000,
+      credit_due_date: '2026-07-25',
+      credit_statement_label: 'Mandiri CC',
+    });
 
     // 2. Transactions
     const txStore = useTransactionStore.getState();
@@ -143,13 +150,38 @@ export default function ProfilePage() {
       status: 'unpaid',
     });
 
-    // 5. Gamification
+    // 5. Budgets
+    const budgetStore = useBudgetStore.getState();
+    useBudgetStore.setState({ budgets: [] });
+    budgetStore.setCategoryBudget(makanId, 3000000);
+    budgetStore.setCategoryBudget(transportId, 1000000);
+    budgetStore.setCategoryBudget(tagihanId, 2500000);
+    budgetStore.setCategoryBudget(kopiId, 500000);
+    budgetStore.setCategoryBudget(belanjaId, 1500000);
+
+    // 6. Recurring Transactions
+    const recurringStore = useRecurringStore.getState();
+    useRecurringStore.setState({ recurringTransactions: [] });
+    recurringStore.addRecurring({
+      name: 'Netflix Family',
+      type: 'expense',
+      amount: 186000,
+      category_id: langgananId,
+      wallet_id: 'wallet-bca',
+      note: 'Berlangganan bulanan',
+      frequency: 'monthly',
+      status: 'active',
+      start_date: getDateOffset(60).split('T')[0],
+      next_due_date: getDateOffset(-5).split('T')[0],
+    });
+
+    // 7. Gamification
     const gamificationStore = useGamificationStore.getState();
     gamificationStore.recordActivity();
     useGamificationStore.setState({
       progress: {
         id: 'local-progress',
-        user_id: 'local-user',
+        user_id: getCurrentUserId(),
         xp: 450,
         level: 3,
         streak_days: 8,
@@ -159,6 +191,10 @@ export default function ProfilePage() {
         updated_at: getDateOffset(0),
       }
     });
+
+    // Generate notifications based on new data
+    const notificationStore = useNotificationStore.getState();
+    notificationStore.generateNotifications();
 
     alert('Berhasil membuat dummy data! Silakan cek Dashboard, Transaksi, Hutang/Split, dan chat AI Advisor 🐷🚀');
     window.location.reload();
@@ -313,30 +349,59 @@ export default function ProfilePage() {
             <span className="text-sm text-text-primary font-semibold flex-1 text-left">Buat Dummy Data AI</span>
           </button>
 
-          {user ? (
-            <div className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-accent-secondary/20">
-              <User size={20} weight="duotone" className="text-accent-secondary" />
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-semibold">Tersinkronisasi</p>
-                <p className="text-sm font-bold text-text-primary truncate">{user.email}</p>
+          <Link
+            href="/backup"
+            onClick={() => haptic('light')}
+            className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-accent-primary/20 active:scale-[0.98] transition-transform"
+          >
+            <CloudArrowUp size={20} weight="duotone" className="text-accent-primary" />
+            <span className="text-sm text-text-primary font-semibold flex-1 text-left">Backup & Restore 💾</span>
+          </Link>
+
+          <div className="pt-2" />
+          <h3 className="text-[13px] font-bold text-text-secondary uppercase tracking-wider pl-2 mb-1">
+            Status Sinkronisasi
+          </h3>
+
+          <div className="w-full flex flex-col p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] mb-2">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                {isOnline ? (
+                  <CloudCheck size={20} weight="duotone" className="text-accent-primary" />
+                ) : (
+                  <CloudSlash size={20} weight="duotone" className="text-accent-danger" />
+                )}
+                <span className="text-sm font-semibold text-text-primary">
+                  {isOnline ? 'Online (Cloud Sync Aktif)' : 'Offline (Mode Lokal)'}
+                </span>
               </div>
-              <button
-                onClick={handleSignOut}
-                className="px-3 py-1.5 rounded-lg bg-accent-danger/10 text-accent-danger text-xs font-semibold active:scale-95"
-              >
-                Keluar
-              </button>
+              {isSyncing && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-secondary/10 text-accent-secondary font-bold">
+                  Menyinkronkan...
+                </span>
+              )}
             </div>
-          ) : (
-            <Link
-              href="/login"
-              onClick={() => haptic('light')}
-              className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-accent-secondary/20 active:scale-[0.98] transition-transform"
-            >
-              <User size={20} weight="duotone" className="text-accent-secondary" />
-              <span className="text-sm text-text-primary font-semibold flex-1 text-left">Masuk Akun & Sync ☁️</span>
-            </Link>
-          )}
+            
+            <div className="flex justify-between items-center text-xs text-text-secondary">
+              <span>{getPendingCount() > 0 ? `${getPendingCount()} perubahan tertunda` : 'Semua data tersinkronisasi'}</span>
+              {lastSyncTime && (
+                <span className="text-[10px] text-text-tertiary">
+                  Terakhir: {formatRelativeDate(lastSyncTime)}
+                </span>
+              )}
+            </div>
+            
+            {lastError && (
+              <p className="text-[10px] text-accent-danger mt-2">
+                ⚠️ {lastError}
+              </p>
+            )}
+          </div>
+
+          <div className="pt-4" />
+          <h3 className="text-[13px] font-bold text-text-secondary uppercase tracking-wider pl-2 mb-1">
+            Fitur Lainnya
+          </h3>
 
           <Link
             href="/transactions/recurring"
@@ -346,6 +411,60 @@ export default function ProfilePage() {
             <ArrowsClockwise size={20} weight="duotone" className="text-accent-secondary" />
             <span className="text-sm text-text-primary font-semibold flex-1 text-left">Transaksi Berulang (Langganan)</span>
           </Link>
+
+          <Link
+            href="/categories"
+            onClick={() => haptic('light')}
+            className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-transform"
+          >
+            <DynamicIcon name="SquaresFour" size={20} weight="duotone" className="text-accent-secondary" />
+            <span className="text-sm text-text-primary font-semibold flex-1 text-left">Kelola Kategori 📂</span>
+          </Link>
+
+          <Link
+            href="/goals"
+            onClick={() => haptic('light')}
+            className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-transform"
+          >
+            <DynamicIcon name="Target" size={20} weight="duotone" className="text-accent-secondary" />
+            <span className="text-sm text-text-primary font-semibold flex-1 text-left">Target Tabungan 🎯</span>
+          </Link>
+
+          <button
+            onClick={async () => {
+              haptic('medium');
+              await syncDataOnLogin();
+            }}
+            disabled={isSyncing || !user}
+            className={`w-full flex items-center gap-3 p-4 rounded-[14px] shadow-[0_2px_12px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-transform ${
+              isSyncing || !user ? 'bg-bg-elevated/50 opacity-50' : 'bg-bg-elevated'
+            }`}
+          >
+            <ArrowsClockwise 
+              size={20} 
+              weight="duotone" 
+              className={`text-accent-secondary ${isSyncing ? 'animate-spin' : ''}`} 
+            />
+            <span className="text-sm text-text-primary font-semibold flex-1 text-left">
+              {isSyncing ? 'Sedang Sinkronisasi...' : 'Sinkronisasi Manual ke Cloud'}
+            </span>
+          </button>
+
+          {user && (
+            <button
+              onClick={async () => {
+                haptic('medium');
+                if (confirm('Yakin ingin keluar?')) {
+                  await supabase.auth.signOut();
+                  window.location.href = '/login';
+                }
+              }}
+              className="w-full flex items-center gap-3 p-4 rounded-[14px] bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-transform"
+            >
+              <SignOut size={20} weight="duotone" className="text-accent-danger" />
+              <span className="text-sm text-accent-danger font-bold flex-1 text-left">Keluar (Logout)</span>
+            </button>
+          )}
 
           <button
             onClick={() => {

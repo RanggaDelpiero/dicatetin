@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Camera is actively used on line 614, so it is not an unused import
 import {
   Plus, Trash, CheckCircle, UsersThree, X, Camera, Microphone,
-  ShoppingCart, User, Receipt
+  ShoppingCart, User, Receipt, ShareNetwork
 } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useSplitBillStore } from '@/lib/stores/splitbill-store';
@@ -22,6 +22,7 @@ import { formatDate } from '@/lib/utils/date';
 import { haptic } from '@/lib/utils/haptic';
 import { XP_REWARDS } from '@/lib/gamification/xp';
 import { compressImage } from '@/lib/utils/image';
+import { shareText, generateSplitBillShareText } from '@/lib/utils/split-bill-share';
 import { SplitBillItem } from '@/lib/types';
 import { generateId } from '@/lib/data/presets';
 
@@ -519,16 +520,29 @@ export function SplitBillTab() {
                     </p>
                   )}
                 </div>
-                <button
-                  onClick={() => {
-                    haptic('medium');
-                    if (confirm(`Hapus split bill "${session.title}"?`)) deleteSession(session.id);
-                  }}
-                  className="p-1.5 rounded-lg hover:bg-bg-secondary"
-                  aria-label={`Hapus split bill ${session.title}`}
-                >
-                  <Trash size={16} className="text-text-tertiary" />
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      haptic('light');
+                      const text = generateSplitBillShareText(session);
+                      shareText(text, `Split Bill: ${session.title}`);
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-bg-secondary text-accent-secondary"
+                    aria-label={`Bagikan split bill ${session.title}`}
+                  >
+                    <ShareNetwork size={16} weight="bold" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      haptic('medium');
+                      if (confirm(`Hapus split bill "${session.title}"?`)) deleteSession(session.id);
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-bg-secondary"
+                    aria-label={`Hapus split bill ${session.title}`}
+                  >
+                    <Trash size={16} className="text-text-tertiary" />
+                  </button>
+                </div>
               </div>
 
               {/* Items summary */}

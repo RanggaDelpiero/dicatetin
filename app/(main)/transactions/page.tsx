@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 import { ArrowUp, ArrowDown, Trash, MagnifyingGlass, Plus, SlidersHorizontal, X } from '@phosphor-icons/react';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { AddTransactionSheet } from '@/components/transactions/AddTransactionSheet';
+import { TransactionDetailSheet } from '@/components/transactions/TransactionDetailSheet';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useWalletStore } from '@/lib/stores/wallet-store';
@@ -41,6 +42,10 @@ function TransactionsListContent() {
   // Filter Bottom Sheet open state
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
+  // UI State
+  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
+  const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
+
   // Temporary filter state for Bottom Sheet (applies only on "Terapkan")
   const [tempDateMode, setTempDateMode] = useState<DateMode>('month');
   const [tempStartDate, setTempStartDate] = useState<string>('');
@@ -52,11 +57,19 @@ function TransactionsListContent() {
 
   // Edit mode
   const [editTransactionId, setEditTransactionId] = useState<string | undefined>(undefined);
-  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
 
   const { transactions, categories, deleteTransaction } = useTransactionStore();
   const { wallets, updateBalance } = useWalletStore();
   const searchParams = useSearchParams();
+
+  // Helpers
+  const getCategory = (id: string) => categories.find((c) => c.id === id);
+  const getWallet = (id: string) => wallets.find((w) => w.id === id);
+  const getFilteredTotal = (type: 'income' | 'expense') => {
+    return filteredTransactions
+      .filter((tx) => tx.type === type)
+      .reduce((sum, tx) => sum + tx.amount, 0);
+  };
 
   // Sync temp state with active state when bottom sheet opens
   React.useEffect(() => {
@@ -202,9 +215,9 @@ function TransactionsListContent() {
     if (search.trim()) {
       const q = search.toLowerCase();
       filtered = filtered.filter((tx) => {
-        const cat = categories.find((c) => c.id === tx.category_id);
-        const wallet = wallets.find((w) => w.id === tx.wallet_id);
-        const targetWallet = tx.target_wallet_id ? wallets.find((w) => w.id === tx.target_wallet_id) : null;
+        const cat = getCategory(tx.category_id);
+        const wallet = getWallet(tx.wallet_id);
+        const targetWallet = tx.target_wallet_id ? getWallet(tx.target_wallet_id) : null;
         return (
           cat?.name.toLowerCase().includes(q) ||
           tx.note?.toLowerCase().includes(q) ||
@@ -511,10 +524,7 @@ function TransactionsListContent() {
                         {/* Transaction card */}
                         <motion.div
                           className="relative flex items-center gap-3 p-3 bg-bg-elevated shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-[14px] cursor-pointer"
-                          onClick={() => {
-                            setEditTransactionId(tx.id);
-                            setIsAddSheetOpen(true);
-                          }}
+                          onClick={() => setSelectedTxId(tx.id)}
                           drag="x"
                           dragConstraints={{ left: -80, right: 0 }}
                           dragElastic={0.1}
@@ -535,20 +545,22 @@ function TransactionsListContent() {
                             style={{ backgroundColor: (cat?.color || '#6B7280') + '20' }}
                           >
                             <DynamicIcon
-                              name={tx.type === 'transfer' ? 'ArrowsLeftRight' : (cat?.icon || 'DotsThree')}
+                              name={tx.payment_kind === 'credit_card_payment' ? 'CreditCard' : tx.type === 'transfer' ? 'ArrowsLeftRight' : (cat?.icon || 'DotsThree')}
                               size={20}
                               weight="duotone"
-                              style={{ color: tx.type === 'transfer' ? '#6366F1' : (cat?.color || '#6B7280') }}
+                              style={{ color: tx.payment_kind === 'credit_card_payment' ? '#10B981' : tx.type === 'transfer' ? '#6366F1' : (cat?.color || '#6B7280') }}
                             />
                           </div>
 
                           {/* Details */}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-text-primary truncate">
-                              {tx.type === 'transfer' ? 'Transfer Saldo' : (cat?.name || 'Lainnya')}
+                              {tx.payment_kind === 'credit_card_payment' ? 'Bayar Tagihan CC' : tx.type === 'transfer' ? 'Transfer Saldo' : (cat?.name || 'Lainnya')}
                             </p>
                             <p className="text-xs text-text-tertiary truncate">
-                              {tx.type === 'transfer'
+                              {tx.payment_kind === 'credit_card_payment'
+                                ? `Dari ${wallet?.name || 'Kantong'} ke ${targetWallet?.name || 'Kartu Kredit'}`
+                                : tx.type === 'transfer'
                                 ? `Dari ${wallet?.name || 'Kantong'} ke ${targetWallet?.name || 'Kantong'}`
                                 : (tx.note || wallet?.name || '')}
                             </p>
@@ -817,6 +829,29 @@ function TransactionsListContent() {
           </div>
         </div>
       </BottomSheet>
+
+      {/* Transaction Detail Sheet */}
+      <TransactionDetailSheet
+        isOpen={selectedTxId !== null}
+        onClose={() => setSelectedTxId(null)}
+        transaction={selectedTxId ? transactions.find(t => t.id === selectedTxId) || null : null}
+        categoryName={selectedTxId ? getCategory(transactions.find(t => t.id === selectedTxId)?.category_id || '')?.name : undefined}
+        categoryIcon={selectedTxId ? getCategory(transactions.find(t => t.id === selectedTxId)?.category_id || '')?.icon : undefined}
+        categoryColor={selectedTxId ? getCategory(transactions.find(t => t.id === selectedTxId)?.category_id || '')?.color : undefined}
+        walletName={selectedTxId ? getWallet(transactions.find(t => t.id === selectedTxId)?.wallet_id || '')?.name : undefined}
+        onEdit={() => {
+          if (selectedTxId) {
+            setEditTransactionId(selectedTxId);
+            setSelectedTxId(null);
+            setTimeout(() => setIsAddSheetOpen(true), 300); // Wait for detail sheet to close
+          }
+        }}
+        onDelete={() => {
+          if (selectedTxId) {
+            deleteTransaction(selectedTxId);
+          }
+        }}
+      />
     </div>
   );
 }

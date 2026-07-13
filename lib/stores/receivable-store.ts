@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Receivable, ReceivableStatus, ReceivablePayment } from '@/lib/types';
 import { generateId } from '@/lib/data/presets';
+import { getCurrentUserId } from '@/lib/stores/auth-store';
 
 interface ReceivableState {
   receivables: Receivable[];
@@ -31,7 +32,7 @@ export const useReceivableStore = create<ReceivableState>()(
         const newR: Receivable = {
           ...r,
           id: generateId(),
-          user_id: 'local-user',
+          user_id: getCurrentUserId(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };

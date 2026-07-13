@@ -58,18 +58,23 @@ export default function AdvisorPage() {
     
     try {
       const financialContext = getContextString();
-      const promptText = `Gunakan data keuangan saya di atas untuk membuat laporan analisis terstruktur.
-Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, tanpa kode block markdown \`\`\`json) dengan format berikut:
+      const promptText = `Lakukan analisis mendalam terhadap struktur keuanganku saat ini.
+Tugasmu:
+1. Hitung rasio tabungan terhadap pemasukan, rasio hutang terhadap aset, dan rasio beban tetap.
+2. Identifikasi kebocoran halus atau pengeluaran impulsif.
+3. Berikan saran alokasi yang lebih baik (misal metode 50/30/20) sesuai data riil.
+
+Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
 {
-  "healthScore": <nilai_integer_1_sampai_100>,
-  "summary": "<ulasan_kondisi_keuangan_saya_3_atau_4_kalimat>",
+  "healthScore": <nilai_integer_1_sampai_100_evaluasi_kritis>,
+  "summary": "<ulasan_tajam_dan_mendalam_kondisi_keuanganku_3_atau_4_kalimat>",
   "breakdown": [
-    { "title": "<aspek_analisis_misal_Pemasukan_atau_Rasio_Hutang>", "desc": "<detail_ringkas>", "status": "good" | "warning" | "neutral" }
+    { "title": "<aspek_analisis_misal_Pemasukan_atau_Rasio_Hutang>", "desc": "<angka_detail_dan_opini>", "status": "good" | "warning" | "neutral" }
   ],
   "recommendations": [
-    "<saran_tindakan_spesifik_1>",
-    "<saran_tindakan_spesifik_2>",
-    "<saran_tindakan_spesifik_3>"
+    "<saran_tindakan_spesifik_angka_1>",
+    "<saran_tindakan_spesifik_angka_2>",
+    "<saran_tindakan_spesifik_angka_3>"
   ]
 }`;
 
@@ -81,6 +86,7 @@ Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, ta
         body: JSON.stringify({
           messages: [{ role: 'user', content: promptText }],
           financialContext,
+          mode: 'analysis',
         }),
       });
 
@@ -98,7 +104,25 @@ Kembalikan respon hanya berupa JSON mentah yang valid (tanpa penjelasan chat, ta
         cleanReply = cleanReply.substring(firstBrace, lastBrace + 1);
       }
       
-      const parsedReport = JSON.parse(cleanReply);
+      let parsedReport;
+      try {
+        parsedReport = JSON.parse(cleanReply);
+      } catch (err) {
+        console.warn('[AI Advisor] Failed to parse JSON, using fallback.', err);
+        parsedReport = {
+          overallScore: 50,
+          summary: "Laporan belum bisa ditampilkan secara rinci karena ada sedikit gangguan komunikasi dengan server AI. Namun sistem mencatat sebagian data berhasil dikalkulasi.",
+          insights: [
+            "Sebagian data pengeluaran dan pemasukan tidak dapat diekstrak secara sempurna.",
+            "Rasio tabungan dan hutang belum dapat dinilai secara akurat pada percobaan ini."
+          ],
+          recommendations: [
+            "Silakan muat ulang (refresh) dan coba klik 'Buat Laporan AI' sekali lagi.",
+            "Pastikan Anda telah memasukkan data transaksi yang cukup untuk dianalisis."
+          ]
+        };
+      }
+
       setReport({
         ...parsedReport,
         lastGeneratedAt: new Date().toISOString(),

@@ -6,8 +6,8 @@
 // API key is only accessible server-side.
 
 import { NextRequest } from 'next/server';
-import { ADVISOR_SYSTEM_PROMPT } from '@/lib/ai/context';
-import { createClient } from '@/lib/supabase/server';
+import { ADVISOR_SYSTEM_PROMPT, ANALYSIS_SYSTEM_PROMPT } from '@/lib/ai/context';
+// No auth check for local-first mode
 
 const BASE_URL = process.env.AI_ADVISOR_BASE_URL || 'https://aimurah.my.id/api/v1';
 const API_KEY = process.env.AI_ADVISOR_API_KEY || '';
@@ -20,15 +20,7 @@ interface ChatMessage {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return Response.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Auth check removed for local-first mode
 
     // Validate API key is configured
     if (!API_KEY) {
@@ -39,9 +31,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { messages, financialContext } = body as {
+    const { messages, financialContext, mode } = body as {
       messages: { role: 'user' | 'assistant'; content: string }[];
       financialContext: string;
+      mode?: 'chat' | 'analysis';
     };
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -51,26 +44,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine which system prompt to use
+    const systemPrompt = mode === 'analysis' ? ANALYSIS_SYSTEM_PROMPT : ADVISOR_SYSTEM_PROMPT;
+
     // Build message history with system prompt + financial context
     const chatMessages: ChatMessage[] = [
       {
         role: 'system',
-        content: ADVISOR_SYSTEM_PROMPT,
+        content: systemPrompt,
       },
       {
         role: 'user',
         content: `Berikut konteks keuangan saya saat ini:\n\n${financialContext}\n\nGunakan data di atas untuk menjawab pertanyaan saya berikutnya secara relevan.`,
       },
-      {
+    ];
+    
+    if (mode !== 'analysis') {
+      chatMessages.push({
         role: 'assistant',
         content: 'Oke, aku sudah lihat data keuanganmu. Silakan tanya apa saja, aku siap bantu! 😊',
-      },
-      // Append actual conversation history
-      ...messages.map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })),
-    ];
+      });
+    }
+
+    // Append actual conversation history
+    chatMessages.push(...messages.map((m) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    })));
 
     // Call openagentic.id API (OpenAI-compatible chat completion format)
     const apiResponse = await fetch(`${BASE_URL}/chat/completions`, {
@@ -173,6 +173,9 @@ export async function POST(request: NextRequest) {
       console.error('[AI Advisor] Unexpected response format:', JSON.stringify(data).substring(0, 500));
       reply = 'Maaf, aku lagi nggak bisa jawab. Coba lagi nanti ya.';
     }
+
+    // Strip markdown code blocks if present
+    reply = reply.replace(/```json\n?/g, '').replace(/```\n?/g, '');
 
     return Response.json({ reply });
   } catch (error) {

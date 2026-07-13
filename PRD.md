@@ -129,7 +129,7 @@
 ## 7. Data Model (High-Level Entities)
 
 - `User` — profil, preferensi (mata uang default: IDR, dark mode, dll)
-- `Wallet` — kantong/rekening (nama, tipe, saldo, warna/ikon)
+- `Wallet` — kantong/rekening (nama, tipe, saldo, warna/ikon, 🆕 untuk `credit_card`: limit, tagihan berjalan, jatuh tempo)
 - `Transaction` — income/expense/transfer (jumlah, kategori, wallet, tanggal, catatan, foto struk, 🆕 `sourceType`: manual/photo/voice untuk tracking)
 - `Category` — preset + custom, terhubung ke income/expense
 - `Debt` — hutang saya (kreditur, nominal, sisa, jadwal, jatuh tempo)
@@ -165,6 +165,7 @@
 - Unit test untuk logic finansial (budget cascade, net worth, split bill, XP/streak).
 - Export/Import JSON (data safety, lihat `CLAUDE.md` §11).
 - 🆕 **Input via foto & suara (AI extraction)** untuk transaksi & split bill (§5.11) — termasuk layar review/edit wajib.
+- 🆕 **Manual Credit Card Tracking**: Pelacakan limit kartu kredit, tagihan berjalan, jatuh tempo, dan manual payment (§5.12).
 
 **Fase 4 (belum direncanakan detail)**
 - Challenge mingguan, kemungkinan migrasi opsional ke backend (Supabase) kalau butuh multi-device sync.

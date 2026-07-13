@@ -6,26 +6,36 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Wallet, WalletType } from '@/lib/types';
 import { generateId } from '@/lib/data/presets';
-import { supabase } from '@/lib/supabase/client';
-import { useSyncStore } from '@/lib/stores/sync-store';
+import { getCurrentUserId } from '@/lib/stores/auth-store';
 
 interface WalletState {
   wallets: Wallet[];
 
   // Actions
-  addWallet: (wallet: { name: string; type: WalletType; balance: number; color: string; icon: string }) => Wallet;
+  addWallet: (wallet: { 
+    name: string; 
+    type: WalletType; 
+    balance: number; 
+    color: string; 
+    icon: string;
+    credit_limit?: number;
+    credit_outstanding?: number;
+    credit_statement_label?: string;
+    credit_due_date?: string;
+    credit_minimum_payment?: number;
+  }) => Wallet;
   updateWallet: (id: string, updates: Partial<Wallet>) => void;
   deleteWallet: (id: string) => void;
   updateBalance: (id: string, delta: number) => void;
+  payCreditCardBill: (params: { creditCardWalletId: string; sourceWalletId: string; amount: number; }) => void;
   getTotalBalance: () => number;
   getWalletById: (id: string) => Wallet | undefined;
-  fetchWallets: () => Promise<void>;
 }
 
 const DEFAULT_WALLETS: Wallet[] = [
   {
     id: 'wallet-cash',
-    user_id: 'local-user',
+    user_id: getCurrentUserId(),
     name: 'Cash',
     type: 'cash',
     balance: 500000,
@@ -37,7 +47,7 @@ const DEFAULT_WALLETS: Wallet[] = [
   },
   {
     id: 'wallet-bca',
-    user_id: 'local-user',
+    user_id: getCurrentUserId(),
     name: 'Bank BCA',
     type: 'bank',
     balance: 3500000,
@@ -49,7 +59,7 @@ const DEFAULT_WALLETS: Wallet[] = [
   },
   {
     id: 'wallet-gopay',
-    user_id: 'local-user',
+    user_id: getCurrentUserId(),
     name: 'GoPay',
     type: 'ewallet',
     balance: 250000,
@@ -70,7 +80,7 @@ export const useWalletStore = create<WalletState>()(
         const newWallet: Wallet = {
           ...wallet,
           id: generateId(),
-          user_id: 'local-user',
+          user_id: getCurrentUserId(),
           order: get().wallets.length,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -78,13 +88,6 @@ export const useWalletStore = create<WalletState>()(
         set((state) => ({
           wallets: [...state.wallets, newWallet],
         }));
-
-        // Sync to Supabase queue
-        useSyncStore.getState().addToQueue({
-          table: 'wallets',
-          action: 'insert',
-          payload: newWallet,
-        });
 
         return newWallet;
       },
@@ -94,27 +97,12 @@ export const useWalletStore = create<WalletState>()(
           w.id === id ? { ...w, ...updates, updated_at: new Date().toISOString() } : w
         );
         set({ wallets: updatedWallets });
-
-        const updatedWallet = updatedWallets.find((w) => w.id === id);
-        if (updatedWallet) {
-          useSyncStore.getState().addToQueue({
-            table: 'wallets',
-            action: 'update',
-            payload: updatedWallet,
-          });
-        }
       },
 
       deleteWallet: (id) => {
         set((state) => ({
           wallets: state.wallets.filter((w) => w.id !== id),
         }));
-
-        useSyncStore.getState().addToQueue({
-          table: 'wallets',
-          action: 'delete',
-          payload: { id },
-        });
       },
 
       updateBalance: (id, delta) => {
@@ -124,38 +112,37 @@ export const useWalletStore = create<WalletState>()(
             : w
         );
         set({ wallets: updatedWallets });
+      },
 
-        const updatedWallet = updatedWallets.find((w) => w.id === id);
-        if (updatedWallet) {
-          useSyncStore.getState().addToQueue({
-            table: 'wallets',
-            action: 'update',
-            payload: updatedWallet,
-          });
-        }
+      payCreditCardBill: ({ creditCardWalletId, sourceWalletId, amount }) => {
+        const wallets = get().wallets;
+        const sourceWallet = wallets.find(w => w.id === sourceWalletId);
+        const ccWallet = wallets.find(w => w.id === creditCardWalletId);
+        
+        if (!sourceWallet || !ccWallet || ccWallet.type !== 'credit_card') return;
+
+        const updatedWallets = wallets.map(w => {
+          if (w.id === sourceWalletId) {
+            return { ...w, balance: w.balance - amount, updated_at: new Date().toISOString() };
+          }
+          if (w.id === creditCardWalletId) {
+            const newOutstanding = Math.max(0, (w.credit_outstanding || 0) - amount);
+            return { ...w, credit_outstanding: newOutstanding, updated_at: new Date().toISOString() };
+          }
+          return w;
+        });
+
+        set({ wallets: updatedWallets });
       },
 
       getTotalBalance: () => {
-        return get().wallets.reduce((sum, w) => sum + w.balance, 0);
+        return get().wallets
+          .filter(w => w.type !== 'credit_card')
+          .reduce((sum, w) => sum + w.balance, 0);
       },
 
       getWalletById: (id) => {
         return get().wallets.find((w) => w.id === id);
-      },
-
-      fetchWallets: async () => {
-        try {
-          const { data, error } = await supabase
-            .from('wallets')
-            .select('*')
-            .order('order', { ascending: true });
-          if (error) throw error;
-          if (data && data.length > 0) {
-            set({ wallets: data as Wallet[] });
-          }
-        } catch (err) {
-          console.error('[Wallets] Failed to fetch from Supabase:', err);
-        }
       },
     }),
     {

@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { BottomTabBar } from '@/components/ui/BottomTabBar';
 import { AddTransactionSheet } from '@/components/transactions/AddTransactionSheet';
+import { AddMenuSheet } from '@/components/ui/AddMenuSheet';
 import { LevelUpModal } from '@/components/gamification/LevelUpModal';
 
 export default function MainLayout({
@@ -14,7 +15,8 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [isAddTxOpen, setIsAddTxOpen] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -24,12 +26,19 @@ export default function MainLayout({
       </main>
 
       {/* Bottom Tab Bar */}
-      <BottomTabBar onAddPress={() => setIsAddSheetOpen(true)} />
+      <BottomTabBar onAddPress={() => setIsAddMenuOpen(true)} />
+
+      {/* Add Menu Hub */}
+      <AddMenuSheet
+        isOpen={isAddMenuOpen}
+        onClose={() => setIsAddMenuOpen(false)}
+        onOpenTransaction={() => setIsAddTxOpen(true)}
+      />
 
       {/* Add Transaction Sheet */}
       <AddTransactionSheet
-        isOpen={isAddSheetOpen}
-        onClose={() => setIsAddSheetOpen(false)}
+        isOpen={isAddTxOpen}
+        onClose={() => setIsAddTxOpen(false)}
       />
 
       {/* Level Up Modal */}
