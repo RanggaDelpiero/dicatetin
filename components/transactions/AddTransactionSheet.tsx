@@ -267,10 +267,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
     }
   }, [isOpen, editTransactionId, transactions]);
 
-  const filteredCategories = useMemo(
-    () => categories.filter((c) => c.type === type),
-    [categories, type]
-  );
+  const filteredCategories = categories.filter((c) => c.type === type);
 
   // Auto-select first category
   React.useEffect(() => {

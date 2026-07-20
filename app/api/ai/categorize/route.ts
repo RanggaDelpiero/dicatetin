@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const availableCategories = categories.map((c: any) => ({
+    const availableCategories = categories.map((c: { id: string; name: string }) => ({
       id: c.id,
       name: c.name
     }));

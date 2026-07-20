@@ -93,7 +93,7 @@ export function BudgetSettingsSheet({ isOpen, onClose }: BudgetSettingsSheetProp
       
       if (data.suggestions && Array.isArray(data.suggestions)) {
         const newLocalBudgets = { ...localBudgets };
-        data.suggestions.forEach((s: any) => {
+        data.suggestions.forEach((s: { categoryId?: string; categoryName?: string; suggestedAmount: number }) => {
           if (s.categoryId && s.suggestedAmount > 0) {
             newLocalBudgets[s.categoryId] = s.suggestedAmount.toString();
           } else {

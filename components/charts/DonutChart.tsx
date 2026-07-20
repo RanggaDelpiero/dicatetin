@@ -37,14 +37,13 @@ export function DonutChart({ data, size = 100, strokeWidth = 20 }: DonutChartPro
   }
 
   // Build segments
-  let currentOffset = 0;
-  const segments = data.map((d) => {
+  const segments = data.map((d, i) => {
     const percentage = d.value / total;
     const segmentLength = percentage * circumference;
     const gapSize = 3; // gap between segments
     const dashArray = `${Math.max(segmentLength - gapSize, 1)} ${circumference - Math.max(segmentLength - gapSize, 1)}`;
-    const rotation = (currentOffset / circumference) * 360 - 90;
-    currentOffset += segmentLength;
+    const prevOffset = data.slice(0, i).reduce((sum, item) => sum + (item.value / total) * circumference, 0);
+    const rotation = (prevOffset / circumference) * 360 - 90;
 
     return {
       ...d,

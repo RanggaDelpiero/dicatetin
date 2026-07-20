@@ -135,7 +135,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
         addXP(XP_REWARDS.AI_ADVISOR);
         unlockBadge('ai-advisor');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       haptic('error');
       alert('Gagal membuat laporan analisis keuangan AI. Silakan coba lagi.');
@@ -240,9 +240,9 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
         addXP(XP_REWARDS.AI_ADVISOR);
         unlockBadge('ai-advisor');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      addAssistantMessage(err.message || 'Duh, koneksi ke otak DicatetinAja terputus. Coba kirim pesan lagi ya! 🔌');
+      addAssistantMessage((err as Error).message || 'Duh, koneksi ke otak DicatetinAja terputus. Coba kirim pesan lagi ya! 🔌');
     } finally {
       setLoading(false);
     }

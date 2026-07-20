@@ -4,7 +4,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, PencilSimple, Trash, Camera, Microphone, PencilLine, Clock, ArrowUp, ArrowDown } from '@phosphor-icons/react';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
@@ -62,6 +62,8 @@ export function TransactionDetailSheet({
   onEdit,
   onDelete,
 }: TransactionDetailSheetProps) {
+  const [now] = useState(() => Date.now());
+
   if (!transaction) return null;
 
   const source = SOURCE_LABELS[transaction.sourceType || 'manual'];
@@ -76,7 +78,7 @@ export function TransactionDetailSheet({
   };
 
   const getRelativeTime = (isoString: string): string => {
-    const diff = Date.now() - new Date(isoString).getTime();
+    const diff = now - new Date(isoString).getTime();
     const minutes = Math.floor(diff / 60000);
     if (minutes < 1) return 'Baru saja';
     if (minutes < 60) return `${minutes} mnt lalu`;

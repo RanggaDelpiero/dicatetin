@@ -47,9 +47,10 @@ export default function BackupPage() {
   const debtCount = useDebtStore((s) => s.debts.length);
   const recCount = useReceivableStore((s) => s.receivables.length);
 
+  const [now] = useState(() => Date.now());
   const lastBackupAgo = useMemo(() => {
     if (!lastBackupDate) return null;
-    const diff = Date.now() - new Date(lastBackupDate).getTime();
+    const diff = now - new Date(lastBackupDate).getTime();
     const minutes = Math.floor(diff / 60000);
     if (minutes < 1) return 'Baru saja';
     if (minutes < 60) return `${minutes} menit lalu`;

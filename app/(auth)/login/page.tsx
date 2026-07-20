@@ -52,9 +52,9 @@ export default function LoginPage() {
         haptic('success');
         router.push('/dashboard');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       haptic('error');
-      setMessage({ text: err.message || 'Terjadi kesalahan auth.', type: 'error' });
+      setMessage({ text: (err as Error).message || 'Terjadi kesalahan auth.', type: 'error' });
     } finally {
       setIsLoading(false);
     }

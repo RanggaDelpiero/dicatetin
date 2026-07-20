@@ -76,8 +76,8 @@ export async function syncDataOnLogin() {
     }
 
     useSyncStore.setState({ isSyncing: false, lastSyncTime: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Initial sync failed', err);
-    useSyncStore.setState({ isSyncing: false, lastError: err.message });
+    useSyncStore.setState({ isSyncing: false, lastError: (err as Error).message });
   }
 }

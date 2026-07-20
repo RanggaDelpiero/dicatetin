@@ -19,7 +19,7 @@ interface AIGoalPlannerSheetProps {
 
 export function AIGoalPlannerSheet({ isOpen, onClose, goalName, targetAmount, currentSaved }: AIGoalPlannerSheetProps) {
   const [loading, setLoading] = useState(false);
-  const [plan, setPlan] = useState<any>(null);
+  const [plan, setPlan] = useState<{ plans?: { mode: string; [key: string]: unknown }[] } | null>(null);
   const [selectedMode, setSelectedMode] = useState<string>('balanced');
   const [error, setError] = useState<string | null>(null);
 
@@ -63,16 +63,16 @@ export function AIGoalPlannerSheet({ isOpen, onClose, goalName, targetAmount, cu
       } else {
         throw new Error('Format balasan AI tidak valid.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Terjadi kesalahan internal.');
+      setError((err as Error).message || 'Terjadi kesalahan internal.');
       haptic('error');
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedPlanData = plan?.plans?.find((p: any) => p.mode === selectedMode);
+  const selectedPlanData = plan?.plans?.find((p) => p.mode === selectedMode);
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="AI Goal Planner">
@@ -123,7 +123,7 @@ export function AIGoalPlannerSheet({ isOpen, onClose, goalName, targetAmount, cu
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-5"
               >
-                <p className="text-xs text-text-secondary italic">"{plan.summary}"</p>
+                <p className="text-xs text-text-secondary italic">&quot;{plan.summary}&quot;</p>
 
                 {/* Mode Selector */}
                 <div className="flex bg-bg-secondary p-1 rounded-xl">

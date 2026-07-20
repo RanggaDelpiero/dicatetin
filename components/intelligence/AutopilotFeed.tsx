@@ -22,7 +22,8 @@ export function AutopilotFeed() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
+    const timer = setTimeout(() => setIsClient(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const generateInsights = async () => {
@@ -76,7 +77,7 @@ export function AutopilotFeed() {
       const data = await res.json();
       
       if (data.insights && Array.isArray(data.insights)) {
-        const newInsights: AIInsight[] = data.insights.map((ins: any) => ({
+        const newInsights: AIInsight[] = data.insights.map((ins: { severity?: string; title: string; explanation: string; suggestedAction?: unknown; destinationLink?: string }) => ({
           id: `ins_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           kind: 'general',
           severity: ins.severity || 'info',
@@ -90,9 +91,9 @@ export function AutopilotFeed() {
 
         syncInsights(newInsights);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Gagal mengambil data dari AI');
+      setError((err as Error).message || 'Gagal mengambil data dari AI');
     } finally {
       setLoading(false);
     }

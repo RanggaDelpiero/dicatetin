@@ -40,13 +40,15 @@ export default function RecurringTransactionsPage() {
   // Set default selects
   React.useEffect(() => {
     if (categories.length > 0 && !selectedCategoryId) {
-      setSelectedCategoryId(categories[0].id);
+      const timer = setTimeout(() => setSelectedCategoryId(categories[0].id), 0);
+      return () => clearTimeout(timer);
     }
   }, [categories, selectedCategoryId]);
 
   React.useEffect(() => {
     if (wallets.length > 0 && !selectedWalletId) {
-      setSelectedWalletId(wallets[0].id);
+      const timer = setTimeout(() => setSelectedWalletId(wallets[0].id), 0);
+      return () => clearTimeout(timer);
     }
   }, [wallets, selectedWalletId]);
 
@@ -243,7 +245,7 @@ export default function RecurringTransactionsPage() {
               <label className="text-xs font-semibold text-text-secondary mb-1.5 block">Frekuensi</label>
               <select
                 value={frequency}
-                onChange={(e) => setFrequency(e.target.value as any)}
+                onChange={(e) => setFrequency(e.target.value as 'daily' | 'weekly' | 'monthly' | 'yearly')}
                 className="w-full px-4 py-3 rounded-xl bg-bg-secondary text-text-primary outline-none text-sm"
               >
                 <option value="daily">Harian</option>

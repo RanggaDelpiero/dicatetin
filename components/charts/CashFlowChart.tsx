@@ -41,7 +41,7 @@ export function CashFlowChart({ series, lowestBalance }: CashFlowChartProps) {
     );
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const renderTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
     if (active && payload && payload.length) {
       const val = payload[0].value;
       const isDanger = val < 0;
@@ -77,7 +77,7 @@ export function CashFlowChart({ series, lowestBalance }: CashFlowChartProps) {
             hide 
             domain={[minBalance < 0 ? minBalance * 1.1 : 0, maxBalance * 1.1]} 
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--text-tertiary)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+          <Tooltip content={renderTooltip} cursor={{ stroke: 'var(--text-tertiary)', strokeWidth: 1, strokeDasharray: '4 4' }} />
           {minBalance < 0 && (
             <ReferenceLine y={0} stroke="var(--accent-danger)" strokeDasharray="3 3" opacity={0.5} />
           )}

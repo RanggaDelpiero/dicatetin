@@ -46,15 +46,21 @@ export function CategoryFormSheet({ isOpen, onClose, onSave, initialData, mode =
 
   useEffect(() => {
     if (isOpen && initialData) {
-      setName(initialData.name);
-      setType(initialData.type);
-      setIcon(initialData.icon);
-      setColor(initialData.color);
+      const timer = setTimeout(() => {
+        setName(initialData.name);
+        setType(initialData.type);
+        setIcon(initialData.icon);
+        setColor(initialData.color);
+      }, 0);
+      return () => clearTimeout(timer);
     } else if (isOpen && !initialData) {
-      setName('');
-      setType('expense');
-      setIcon('DotsThree');
-      setColor('#6B7280');
+      const timer = setTimeout(() => {
+        setName('');
+        setType('expense');
+        setIcon('DotsThree');
+        setColor('#6B7280');
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, initialData]);
 

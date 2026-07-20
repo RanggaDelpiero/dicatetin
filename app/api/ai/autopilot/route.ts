@@ -44,7 +44,7 @@ Gunakan format JSON yang sudah ditentukan.
     }
 
     // Parse the JSON response
-    let parsed: any = parseAIJSON(aiResult.content);
+    let parsed: { insights?: unknown[] } | unknown[] | null = parseAIJSON(aiResult.content);
 
     // If AI returned an array directly instead of { insights: [...] }
     if (Array.isArray(parsed)) {

@@ -23,7 +23,8 @@ export function CashFlowForecastCard() {
   const { budgets } = useBudgetStore();
 
   useEffect(() => {
-    setIsClient(true);
+    const timer = setTimeout(() => setIsClient(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const projection = useMemo(() => {
@@ -69,7 +70,7 @@ export function CashFlowForecastCard() {
           {[7, 14, 30].map(d => (
             <button
               key={d}
-              onClick={() => setDays(d as any)}
+              onClick={() => setDays(d as 7 | 14 | 30)}
               className={`text-[11px] font-medium px-3 py-1 rounded-md transition-colors ${days === d ? 'bg-bg-elevated text-text-primary shadow-sm' : 'text-text-secondary'}`}
             >
               {d}H

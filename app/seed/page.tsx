@@ -75,7 +75,7 @@ export default function SeedPage() {
         addTransaction({
           wallet_id: tx.wallet,
           category_id: tx.cat,
-          type: tx.type as any,
+          type: tx.type as 'income' | 'expense' | 'transfer',
           amount: tx.amount,
           date: createDate(tx.daysAgo),
           note: tx.note,
@@ -87,9 +87,9 @@ export default function SeedPage() {
       setCategoryBudget('transport', 500000);
 
       setStatus('Seeding complete! You can now go to /dashboard.');
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      setStatus('Error: ' + e.message);
+      setStatus('Error: ' + (e as Error).message);
     }
   };
 

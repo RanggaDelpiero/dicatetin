@@ -44,9 +44,10 @@ export default function DashboardPage() {
   const { isOnline, isSyncing, syncQueue } = useSyncStore();
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
     checkAndTriggerRecurring();
     generateNotifications();
+    return () => clearTimeout(timer);
   }, [checkAndTriggerRecurring, generateNotifications]);
 
   const [showBudgetSheet, setShowBudgetSheet] = useState(false);
@@ -96,20 +97,18 @@ export default function DashboardPage() {
     }));
   }, [transactions, wallets]);
 
-  // Donut chart data
-  const chartData = useMemo(() => {
-    return categoryTotals.slice(0, 6).map((ct) => ({
-      name: ct.category,
-      value: ct.amount,
-      color: ct.color,
-    }));
-  }, [categoryTotals]);
+  // Donut chart data — inline to avoid memoization dependency on mutable array
+  const chartData = categoryTotals.slice(0, 6).map((ct) => ({
+    name: ct.category,
+    value: ct.amount,
+    color: ct.color,
+  }));
 
   // Financial insights
-  const debtsData = useDebtStore.getState().getActiveDebts();
-  const budgetsData = useBudgetStore.getState().budgets;
-  const insightsCategories = useTransactionStore.getState().categories;
   const insights = useMemo(() => {
+    const debtsData = useDebtStore.getState().getActiveDebts();
+    const budgetsData = useBudgetStore.getState().budgets;
+    const insightsCategories = useTransactionStore.getState().categories;
     return generateInsights(
       transactions,
       insightsCategories,
