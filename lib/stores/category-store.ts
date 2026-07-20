@@ -72,7 +72,7 @@ export const useCategoryStore = create<CategoryState>()(
         }));
       },
 
-      mergeCategories: (sourceId, targetId) => {
+      mergeCategories: (sourceId) => {
         // Returns the IDs of transactions that need to be reassigned
         // The actual transaction reassignment happens in the calling component
         // because category store shouldn't depend on transaction store

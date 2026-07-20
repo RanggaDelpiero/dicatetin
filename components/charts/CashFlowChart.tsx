@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from 'recharts';
 import { formatCurrency } from '@/lib/utils/currency';
-import { formatDate } from '@/lib/utils/date';
 
 interface CashFlowChartProps {
   series: { date: string; balance: number }[];

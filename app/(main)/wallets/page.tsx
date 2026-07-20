@@ -5,8 +5,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, PencilSimple, Trash } from '@phosphor-icons/react';
+import { motion } from 'framer-motion';
+import { Plus, Trash } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { BottomSheet } from '@/components/ui/BottomSheet';

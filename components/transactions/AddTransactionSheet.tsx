@@ -4,7 +4,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Backspace, CalendarBlank, Notebook, ArrowUp, ArrowDown, Sparkle, SpinnerGap } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';

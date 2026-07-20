@@ -11,7 +11,6 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useReceivableStore } from '@/lib/stores/receivable-store';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
 import { formatCurrency, calcPercentage } from '@/lib/utils/currency';
-import { formatDate } from '@/lib/utils/date';
 import { haptic } from '@/lib/utils/haptic';
 import { XP_REWARDS } from '@/lib/gamification/xp';
 

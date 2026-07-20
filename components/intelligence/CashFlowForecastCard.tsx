@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { TrendUp, TrendDown, WarningCircle } from '@phosphor-icons/react';
 import { useWalletStore } from '@/lib/stores/wallet-store';
-import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useRecurringStore } from '@/lib/stores/recurring-store';
 import { useDebtStore } from '@/lib/stores/debt-store';
 import { useBudgetStore } from '@/lib/stores/budget-store';
@@ -17,7 +16,6 @@ export function CashFlowForecastCard() {
   const [isClient, setIsClient] = useState(false);
 
   const { wallets } = useWalletStore();
-  const { transactions } = useTransactionStore();
   const { recurringTransactions } = useRecurringStore();
   const { debts } = useDebtStore();
   const { budgets } = useBudgetStore();
@@ -49,7 +47,7 @@ export function CashFlowForecastCard() {
       projectionDays: days,
       includeDailyBudgetBurn: true,
     });
-  }, [wallets, transactions, recurringTransactions, debts, budgets, days, isClient]);
+  }, [wallets, recurringTransactions, debts, budgets, days, isClient]);
 
   if (!isClient || !projection) return <div className="h-48 rounded-xl bg-bg-secondary animate-pulse" />;
 

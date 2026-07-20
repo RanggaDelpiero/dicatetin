@@ -5,12 +5,12 @@
 "use client";
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { 
-  ArrowLeft, Plus, Trash, Clock, 
-  ToggleLeft, ToggleRight, CalendarBlank, 
-  Coins, ArrowsClockwise, Check 
+import {
+  ArrowLeft, Plus, Trash,
+  ToggleLeft, ToggleRight,
+  Coins, Check 
 } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';

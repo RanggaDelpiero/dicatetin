@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, CalendarBlank, CurrencyDollar, Trash, CheckCircle } from '@phosphor-icons/react';
+import { Plus, CalendarBlank, Trash, CheckCircle } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { useDebtStore } from '@/lib/stores/debt-store';

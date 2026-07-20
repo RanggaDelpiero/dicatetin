@@ -12,7 +12,6 @@ import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { formatCurrency } from '@/lib/utils/currency';
 import { haptic } from '@/lib/utils/haptic';
 import { Sparkle, SpinnerGap } from '@phosphor-icons/react';
-import { getCurrentMonthRange } from '@/lib/utils/date';
 
 interface BudgetSettingsSheetProps {
   isOpen: boolean;
@@ -21,8 +20,7 @@ interface BudgetSettingsSheetProps {
 
 export function BudgetSettingsSheet({ isOpen, onClose }: BudgetSettingsSheetProps) {
   const { categories, getTotalByType, getCategoryTotals } = useTransactionStore();
-  const { budgets, setCategoryBudget, getTotalMonthlyBudget, getTotalWeeklyBudget, getTotalDailyBudget } =
-    useBudgetStore();
+  const { budgets, setCategoryBudget } = useBudgetStore();
 
   const expenseCategories = categories.filter((c) => c.type === 'expense');
 

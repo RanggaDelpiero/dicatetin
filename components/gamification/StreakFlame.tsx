@@ -8,7 +8,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Fire } from '@phosphor-icons/react';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
-import { getStreakColor, getStreakMessage } from '@/lib/gamification/streak';
+import { getStreakColor } from '@/lib/gamification/streak';
 
 export function StreakFlame() {
   const { progress } = useGamificationStore();

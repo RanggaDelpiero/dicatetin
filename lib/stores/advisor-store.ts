@@ -35,7 +35,7 @@ interface AdvisorState {
 
 export const useAdvisorStore = create<AdvisorState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       messages: [],
       isLoading: false,
       report: null,

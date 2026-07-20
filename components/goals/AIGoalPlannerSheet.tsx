@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Sparkle, SpinnerGap, CaretDown, CaretUp, CalendarBlank, WarningCircle } from '@phosphor-icons/react';
+import { Target, Sparkle, SpinnerGap, CalendarBlank, WarningCircle } from '@phosphor-icons/react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { formatCurrency } from '@/lib/utils/currency';

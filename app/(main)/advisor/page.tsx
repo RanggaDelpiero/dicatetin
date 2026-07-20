@@ -4,11 +4,11 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
-  CaretLeft, Trash, PaperPlaneTilt, Robot, 
+  CaretLeft, Trash, PaperPlaneTilt,
   ArrowClockwise, CheckCircle, WarningCircle, 
   Info, Lightbulb, TrendUp, Sparkle, Heart, Target 
 } from '@phosphor-icons/react';
@@ -46,7 +46,7 @@ export default function AdvisorPage() {
     messages, isLoading, addUserMessage, addAssistantMessage, 
     setLoading, clearHistory, report, isReportLoading, setReport, setReportLoading 
   } = useAdvisorStore();
-  const { transactions, getCategoryTotals, getTotalByType, categories } = useTransactionStore();
+  const { getCategoryTotals, getTotalByType } = useTransactionStore();
   const { wallets, getTotalBalance } = useWalletStore();
   const { progress, addXP, unlockBadge } = useGamificationStore();
   const { debts } = useDebtStore();

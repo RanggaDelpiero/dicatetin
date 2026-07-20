@@ -5,7 +5,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { motion, PanInfo } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Insight } from '@/lib/insights/insights';
 
 interface InsightsCarouselProps {

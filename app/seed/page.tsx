@@ -4,9 +4,6 @@ import React, { useState } from 'react';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useWalletStore } from '@/lib/stores/wallet-store';
 import { useBudgetStore } from '@/lib/stores/budget-store';
-import { useGamificationStore } from '@/lib/stores/gamification-store';
-import { useDebtStore } from '@/lib/stores/debt-store';
-import { useReceivableStore } from '@/lib/stores/receivable-store';
 
 export default function SeedPage() {
   const [status, setStatus] = useState<string>('Ready to seed.');

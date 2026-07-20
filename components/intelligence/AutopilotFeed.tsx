@@ -2,11 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkle, X, WarningCircle, CheckCircle, Info, ArrowRight, Lightbulb, SpinnerGap } from '@phosphor-icons/react';
+import { Sparkle, X, WarningCircle, CheckCircle, ArrowRight, Lightbulb, SpinnerGap } from '@phosphor-icons/react';
 import { useIntelligenceStore } from '@/lib/stores/intelligence-store';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
-import { useWalletStore } from '@/lib/stores/wallet-store';
-import { buildSanitizedAIPayload, SanitizeInput } from '@/lib/ai/sanitize';
 import { AIInsight } from '@/lib/ai/schemas';
 import { useRouter } from 'next/navigation';
 import { haptic } from '@/lib/utils/haptic';
@@ -14,8 +12,7 @@ import { haptic } from '@/lib/utils/haptic';
 export function AutopilotFeed() {
   const router = useRouter();
   const { getActiveInsights, dismissInsight, acceptInsight, syncInsights } = useIntelligenceStore();
-  const { transactions, getCategoryTotals } = useTransactionStore();
-  const { wallets, getTotalBalance } = useWalletStore();
+  const { transactions } = useTransactionStore();
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +58,7 @@ export function AutopilotFeed() {
       const sanitizedPayload = buildSanitizedAIPayload(payloadInput);
 
       // We use a signature based on the current transaction count so it doesn't just spam
-      const dataSignature = `sig_${transactions.length}_${getTotalBalance()}`;
+      const _dataSignature = `sig_${transactions.length}_${getTotalBalance()}`;
 
       const res = await fetch('/api/ai/autopilot', {
         method: 'POST',
@@ -85,7 +82,7 @@ export function AutopilotFeed() {
           explanation: ins.explanation,
           suggestedAction: ins.suggestedAction,
           destinationLink: ins.destinationLink,
-          dataSignature,
+          dataSignature: _dataSignature,
           createdAt: new Date().toISOString()
         }));
 

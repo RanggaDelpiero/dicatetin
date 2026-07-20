@@ -65,13 +65,8 @@ function TransactionsListContent() {
   // Helpers
   const getCategory = (id: string) => categories.find((c) => c.id === id);
   const getWallet = (id: string) => wallets.find((w) => w.id === id);
-  const getFilteredTotal = (type: 'income' | 'expense') => {
-    return filteredTransactions
-      .filter((tx) => tx.type === type)
-      .reduce((sum, tx) => sum + tx.amount, 0);
-  };
 
-  // Sync temp state with active state when bottom sheet opens
+
   React.useEffect(() => {
     if (isFilterSheetOpen) {
       const timer = setTimeout(() => {
@@ -215,9 +210,9 @@ function TransactionsListContent() {
     if (search.trim()) {
       const q = search.toLowerCase();
       filtered = filtered.filter((tx) => {
-        const cat = getCategory(tx.category_id);
-        const wallet = getWallet(tx.wallet_id);
-        const targetWallet = tx.target_wallet_id ? getWallet(tx.target_wallet_id) : null;
+        const cat = categories.find((c) => c.id === tx.category_id);
+        const wallet = wallets.find((w) => w.id === tx.wallet_id);
+        const targetWallet = tx.target_wallet_id ? wallets.find((w) => w.id === tx.target_wallet_id) : null;
         return (
           cat?.name.toLowerCase().includes(q) ||
           tx.note?.toLowerCase().includes(q) ||

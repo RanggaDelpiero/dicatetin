@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Envelope, Lock, Sparkle, ArrowRight } from '@phosphor-icons/react';
+import { Envelope, Lock, ArrowRight } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase/client';
 import { haptic } from '@/lib/utils/haptic';
 

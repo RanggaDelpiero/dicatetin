@@ -6,8 +6,8 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { ArrowUp, ArrowDown, Sparkle, CaretRight, Robot, Plus, PencilSimple, Bell, Cloud, CloudCheck, CloudSlash } from '@phosphor-icons/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowUp, ArrowDown, Sparkle, CaretRight, Robot, PencilSimple, Bell, Cloud, CloudCheck, CloudSlash } from '@phosphor-icons/react';
 import { StreakFlame } from '@/components/gamification/StreakFlame';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
@@ -34,7 +34,6 @@ import { haptic } from '@/lib/utils/haptic';
 export default function DashboardPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
-  const [activeWalletIndex, setActiveWalletIndex] = useState(0);
 
   const { transactions, getCategoryTotals, getTotalByType } = useTransactionStore();
   const { wallets, getTotalBalance } = useWalletStore();
@@ -117,7 +116,7 @@ export default function DashboardPage() {
       recurringTransactions,
       new Date(),
     );
-  }, [transactions, insightsCategories, budgetsData, debtsData, recurringTransactions]);
+  }, [transactions, recurringTransactions]);
 
   if (!mounted) {
     return <div className="min-h-screen bg-bg-primary" />;

@@ -7,9 +7,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, Plus, X, Trash, Money, Target } from '@phosphor-icons/react';
+import { ArrowLeft, Plus, X, Trash, Money } from '@phosphor-icons/react';
 import { ProgressRing } from '@/components/ui/ProgressRing';
-import { useGoalStore, SavingsGoal } from '@/lib/stores/goal-store';
+import { useGoalStore } from '@/lib/stores/goal-store';
 import { formatCurrency } from '@/lib/utils/currency';
 import { haptic } from '@/lib/utils/haptic';
 

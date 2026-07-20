@@ -6,13 +6,12 @@
 
 import React, { useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DownloadSimple, UploadSimple, Clock, ShieldCheck, Warning, CheckCircle, XCircle, ArrowLeft, Bell, BellSlash, Trash } from '@phosphor-icons/react';
+import { DownloadSimple, UploadSimple, ShieldCheck, Warning, CheckCircle, XCircle, ArrowLeft, Bell, BellSlash, Trash } from '@phosphor-icons/react';
 import { useBackupStore, BackupData } from '@/lib/stores/data-backup-store';
 import { useTransactionStore } from '@/lib/stores/transaction-store';
 import { useWalletStore } from '@/lib/stores/wallet-store';
 import { useDebtStore } from '@/lib/stores/debt-store';
 import { useReceivableStore } from '@/lib/stores/receivable-store';
-import { formatCurrency } from '@/lib/utils/currency';
 import { haptic } from '@/lib/utils/haptic';
 import Link from 'next/link';
 
@@ -60,7 +59,7 @@ export default function BackupPage() {
     if (days < 7) return `${days} hari lalu`;
     const weeks = Math.floor(days / 7);
     return `${weeks} minggu lalu`;
-  }, [lastBackupDate]);
+  }, [lastBackupDate, now]);
 
   const handleExport = () => {
     setIsExporting(true);

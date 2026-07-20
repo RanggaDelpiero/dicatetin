@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Moon, Sun, SignOut, Trash, Info, Sparkle, User, ArrowsClockwise, CloudArrowUp, CloudCheck, CloudSlash } from '@phosphor-icons/react';
+import { Moon, SignOut, Trash, Info, Sparkle, ArrowsClockwise, CloudArrowUp, CloudCheck, CloudSlash } from '@phosphor-icons/react';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { useGamificationStore } from '@/lib/stores/gamification-store';
@@ -31,9 +31,7 @@ import { useNotificationStore } from '@/lib/stores/notification-store';
 
 export default function ProfilePage() {
   const { progress } = useGamificationStore();
-  const { transactions } = useTransactionStore();
-  const { wallets } = useWalletStore();
-  const { isOnline, syncQueue, isSyncing, lastSyncTime, lastError, getPendingCount } = useSyncStore();
+  const { isOnline, isSyncing, lastSyncTime, lastError, getPendingCount } = useSyncStore();
   const { user } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
