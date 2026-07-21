@@ -20,12 +20,14 @@ import { useWalletStore } from '@/lib/stores/wallet-store';
 import { formatCurrency } from '@/lib/utils/currency';
 import { formatDate } from '@/lib/utils/date';
 import { haptic } from '@/lib/utils/haptic';
+import { useToast } from '@/components/ui/Toast';
 
 export default function RecurringTransactionsPage() {
   const { recurringTransactions, addRecurring, updateRecurring, deleteRecurring } = useRecurringStore();
   const { categories } = useTransactionStore();
   const { wallets } = useWalletStore();
 
+  const toast = useToast();
   const [showAddSheet, setShowAddSheet] = useState(false);
 
   // Form states
@@ -56,7 +58,7 @@ export default function RecurringTransactionsPage() {
     const parsedAmount = parseInt(amount, 10);
     if (!name.trim() || !parsedAmount || parsedAmount <= 0 || !selectedCategoryId || !selectedWalletId) {
       haptic('error');
-      alert('Mohon isi semua data dengan benar.');
+      toast.warning('Mohon isi semua data dengan benar.');
       return;
     }
 
@@ -110,7 +112,7 @@ export default function RecurringTransactionsPage() {
         </div>
         <button
           onClick={() => { haptic('light'); setShowAddSheet(true); }}
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-secondary text-white active:scale-95 transition-transform shadow-md"
+          className="flex items-center justify-center w-9 h-9 rounded-full bg-accent-secondary text-text-on-accent active:scale-95 transition-transform shadow-md"
         >
           <Plus size={18} weight="bold" />
         </button>
@@ -130,7 +132,7 @@ export default function RecurringTransactionsPage() {
             </p>
             <button
               onClick={() => { haptic('light'); setShowAddSheet(true); }}
-              className="px-5 py-2.5 rounded-xl bg-accent-secondary text-white text-xs font-semibold active:scale-95 transition-all shadow-md"
+              className="px-5 py-2.5 rounded-xl bg-accent-secondary text-text-on-accent text-xs font-semibold active:scale-95 transition-all shadow-md"
             >
               Tambah Baru 🚀
             </button>
@@ -313,7 +315,7 @@ export default function RecurringTransactionsPage() {
 
           <button
             onClick={handleAdd}
-            className="w-full py-4 rounded-2xl bg-accent-secondary text-white font-bold text-sm active:scale-[0.98] transition-transform shadow-md mt-2 flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-2xl bg-accent-secondary text-text-on-accent font-bold text-sm active:scale-[0.98] transition-transform shadow-md mt-2 flex items-center justify-center gap-2"
           >
             <Check size={18} weight="bold" /> Simpan Transaksi Berulang
           </button>

@@ -171,7 +171,7 @@ export default function BulkTransactionPage() {
                     onClick={() => applyGlobalWallet(w.id)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all ${
                       globalWalletId === w.id
-                        ? 'bg-accent-secondary text-white'
+                        ? 'bg-accent-secondary text-text-on-accent'
                         : 'bg-bg-secondary text-text-secondary'
                     }`}
                   >
@@ -191,7 +191,7 @@ export default function BulkTransactionPage() {
                     onClick={() => applyGlobalCategory(c.id)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all ${
                       globalCategoryId === c.id
-                        ? 'bg-accent-secondary text-white'
+                        ? 'bg-accent-secondary text-text-on-accent'
                         : 'bg-bg-secondary text-text-secondary'
                     }`}
                   >
@@ -315,7 +315,7 @@ export default function BulkTransactionPage() {
         <button
           onClick={handleSave}
           disabled={!isValid}
-          className={`px-6 py-3 rounded-xl font-semibold text-sm text-white flex items-center gap-1.5 shadow-md active:scale-95 transition-transform ${
+          className={`px-6 py-3 rounded-xl font-semibold text-sm text-text-on-accent flex items-center gap-1.5 shadow-md active:scale-95 transition-transform ${
             isValid
               ? 'bg-accent-primary shadow-[0_4px_15px_rgba(34,197,94,0.3)]'
               : 'bg-text-tertiary/30 cursor-not-allowed shadow-none'

@@ -62,7 +62,7 @@ export function BottomTabBar({ onAddPress }: BottomTabBarProps) {
                 className="relative flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] shadow-ai-glow active:scale-95 transition-transform mx-1"
                 aria-label="Tambah transaksi"
               >
-                <Plus size={24} weight="bold" className="text-white relative z-10" />
+                <Plus size={24} weight="bold" className="text-text-on-accent relative z-10" />
                 {/* Glow pulse */}
                 <motion.div
                   className="absolute inset-0 rounded-full bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899]"

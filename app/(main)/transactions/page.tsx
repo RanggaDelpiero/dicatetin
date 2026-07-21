@@ -343,7 +343,7 @@ function TransactionsListContent() {
             >
               <SlidersHorizontal size={20} weight="bold" />
               {activeFiltersCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent-secondary text-white text-[10px] font-bold flex items-center justify-center border-2 border-bg-primary">
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent-secondary text-text-on-accent text-[10px] font-bold flex items-center justify-center border-2 border-bg-primary">
                   {activeFiltersCount}
                 </span>
               )}
@@ -510,7 +510,7 @@ function TransactionsListContent() {
                         <div className="absolute right-0 top-0 bottom-0 flex items-center">
                           <button
                             onClick={() => handleDelete(tx)}
-                            className="h-full px-5 bg-accent-danger text-white flex items-center justify-center"
+                            className="h-full px-5 bg-accent-danger text-text-on-accent flex items-center justify-center"
                           >
                             <Trash size={20} weight="fill" />
                           </button>
@@ -631,7 +631,7 @@ function TransactionsListContent() {
                   }}
                   className={`py-2 px-1 rounded-xl text-xs font-medium text-center transition-all ${
                     tempDateMode === m.id
-                      ? 'bg-accent-secondary text-white shadow-sm'
+                      ? 'bg-accent-secondary text-text-on-accent shadow-sm'
                       : 'bg-bg-secondary text-text-secondary'
                   }`}
                 >
@@ -707,7 +707,7 @@ function TransactionsListContent() {
                 }}
                 className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                   tempWalletId === 'all'
-                    ? 'bg-accent-secondary text-white shadow-sm'
+                    ? 'bg-accent-secondary text-text-on-accent shadow-sm'
                     : 'bg-bg-secondary text-text-secondary'
                 }`}
               >
@@ -722,7 +722,7 @@ function TransactionsListContent() {
                   }}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     tempWalletId === w.id
-                      ? 'bg-accent-secondary text-white shadow-sm'
+                      ? 'bg-accent-secondary text-text-on-accent shadow-sm'
                       : 'bg-bg-secondary text-text-secondary'
                   }`}
                 >
@@ -747,7 +747,7 @@ function TransactionsListContent() {
                   }}
                   className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     tempCategoryId === 'all'
-                      ? 'bg-accent-secondary text-white shadow-sm'
+                      ? 'bg-accent-secondary text-text-on-accent shadow-sm'
                       : 'bg-bg-secondary text-text-secondary'
                 }`}
               >
@@ -762,7 +762,7 @@ function TransactionsListContent() {
                   }}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     tempCategoryId === c.id
-                      ? 'bg-accent-secondary text-white shadow-sm'
+                      ? 'bg-accent-secondary text-text-on-accent shadow-sm'
                       : 'bg-bg-secondary text-text-secondary'
                   }`}
                 >
@@ -794,7 +794,7 @@ function TransactionsListContent() {
                   }}
                   className={`py-2 px-3 rounded-xl text-xs font-medium text-left transition-all ${
                     tempSortBy === s.id
-                      ? 'bg-accent-secondary text-white shadow-sm'
+                      ? 'bg-accent-secondary text-text-on-accent shadow-sm'
                       : 'bg-bg-secondary text-text-secondary'
                   }`}
                 >
@@ -817,7 +817,7 @@ function TransactionsListContent() {
             </button>
             <button
               onClick={applyFilters}
-              className="flex-1 py-3.5 rounded-2xl bg-accent-primary text-white font-semibold text-sm active:scale-[0.98] transition-transform text-center shadow-[0_4px_15px_rgba(34,197,94,0.25)]"
+              className="flex-1 py-3.5 rounded-2xl bg-accent-primary text-text-on-accent font-semibold text-sm active:scale-[0.98] transition-transform text-center shadow-[0_4px_15px_rgba(34,197,94,0.25)]"
             >
               Terapkan
             </button>

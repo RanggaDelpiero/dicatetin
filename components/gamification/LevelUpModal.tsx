@@ -139,7 +139,7 @@ export function LevelUpModal() {
 
             <button
               onClick={dismissLevelUp}
-              className="w-full py-3.5 rounded-2xl bg-accent-primary text-white font-semibold text-base active:scale-[0.98] transition-transform"
+              className="w-full py-3.5 rounded-2xl bg-accent-primary text-text-on-accent font-semibold text-base active:scale-[0.98] transition-transform"
             >
               Lanjut Yuk! 💪
             </button>

@@ -25,6 +25,7 @@ import { compressImage } from '@/lib/utils/image';
 import { shareText, generateSplitBillShareText } from '@/lib/utils/split-bill-share';
 import { SplitBillItem } from '@/lib/types';
 import { generateId } from '@/lib/data/presets';
+import { useToast } from '@/components/ui/Toast';
 
 const SELF_NAME = 'Saya';
 
@@ -39,6 +40,7 @@ interface ItemForm {
 }
 
 export function SplitBillTab() {
+  const toast = useToast();
   const { sessions, addSession, deleteSession, markParticipantPaid } = useSplitBillStore();
   const { addReceivable } = useReceivableStore();
   const { addDebt } = useDebtStore();
@@ -202,7 +204,7 @@ export function SplitBillTab() {
         const message = err instanceof Error ? err.message : 'Gagal mengekstrak bill dari foto.';
         console.error(err);
         haptic('error');
-        alert(message);
+        toast.error(message);
       } finally {
         setIsAiExtracting(false);
       }
@@ -217,7 +219,7 @@ export function SplitBillTab() {
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('Pencatatan suara tidak didukung oleh browser Anda. Gunakan Chrome atau Safari.');
+      toast.error('Pencatatan suara tidak didukung oleh browser Anda. Gunakan Chrome atau Safari.');
       return;
     }
 
@@ -287,7 +289,7 @@ export function SplitBillTab() {
         const message = err instanceof Error ? err.message : 'AI gagal memahami catatan suaramu.';
         console.error(err);
         haptic('error');
-        alert(message);
+        toast.error(message);
       } finally {
         setIsAiExtracting(false);
       }
@@ -478,7 +480,7 @@ export function SplitBillTab() {
         </div>
         <button
           onClick={() => { haptic('light'); resetForm(); setShowAddSheet(true); }}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-accent-secondary text-white text-sm font-semibold active:scale-95 transition-transform"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-accent-secondary text-text-on-accent text-sm font-semibold active:scale-95 transition-transform"
         >
           <Plus size={16} weight="bold" />
           Split Baru
@@ -678,7 +680,7 @@ export function SplitBillTab() {
                   onClick={() => { if (i <= (['info', 'items', 'assign', 'payer', 'confirm'] as FormStep[]).indexOf(step)) setStep(s); }}
                   className={`text-[10px] font-semibold px-2 py-1 rounded-full transition-all ${
                     step === s
-                      ? 'bg-accent-secondary text-white'
+                      ? 'bg-accent-secondary text-text-on-accent'
                       : i < (['info', 'items', 'assign', 'payer', 'confirm'] as FormStep[]).indexOf(step)
                         ? 'bg-accent-primary/15 text-accent-primary'
                         : 'bg-bg-secondary text-text-tertiary'
@@ -918,7 +920,7 @@ export function SplitBillTab() {
                       />
                       <button
                         onClick={addParticipant}
-                        className="px-4 py-3 rounded-xl bg-accent-secondary text-white text-sm font-semibold"
+                        className="px-4 py-3 rounded-xl bg-accent-secondary text-text-on-accent text-sm font-semibold"
                       >
                         <Plus size={20} weight="bold" />
                       </button>
@@ -974,7 +976,7 @@ export function SplitBillTab() {
                                     onClick={() => toggleItemAssignment(item.id, p)}
                                     className={`text-xs px-2.5 py-1.5 rounded-full font-medium transition-all ${
                                       isAssigned
-                                        ? 'bg-accent-secondary text-white shadow-sm'
+                                        ? 'bg-accent-secondary text-text-on-accent shadow-sm'
                                         : 'bg-bg-elevated text-text-tertiary hover:text-text-secondary'
                                     }`}
                                   >
@@ -1061,7 +1063,7 @@ export function SplitBillTab() {
                           onClick={() => { haptic('light'); setPaidBy(name); }}
                           className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all ${
                             paidBy === name
-                              ? 'bg-accent-secondary text-white shadow-md'
+                              ? 'bg-accent-secondary text-text-on-accent shadow-md'
                               : 'bg-bg-secondary text-text-primary hover:bg-bg-secondary/80'
                           }`}
                         >
@@ -1283,7 +1285,7 @@ export function SplitBillTab() {
                 disabled={!canProceed()}
                 className={`flex-1 flex items-center justify-center gap-1 py-3.5 rounded-2xl font-semibold text-sm transition-all ${
                   canProceed()
-                    ? 'bg-accent-secondary text-white active:scale-[0.98]'
+                    ? 'bg-accent-secondary text-text-on-accent active:scale-[0.98]'
                     : 'bg-text-tertiary/30 text-text-tertiary cursor-not-allowed'
                 }`}
               >

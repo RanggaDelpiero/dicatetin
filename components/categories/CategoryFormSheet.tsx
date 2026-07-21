@@ -115,8 +115,8 @@ export function CategoryFormSheet({ isOpen, onClose, onSave, initialData, mode =
                     className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
                       type === t
                         ? t === 'expense'
-                          ? 'bg-accent-danger text-white'
-                          : 'bg-accent-primary text-white'
+                          ? 'bg-accent-danger text-text-on-accent'
+                          : 'bg-accent-primary text-text-on-accent'
                         : 'bg-bg-secondary text-text-secondary'
                     }`}
                   >
@@ -194,7 +194,7 @@ export function CategoryFormSheet({ isOpen, onClose, onSave, initialData, mode =
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                         >
-                          <Check size={16} weight="bold" className="text-white" />
+                          <Check size={16} weight="bold" className="text-text-on-accent" />
                         </motion.div>
                       )}
                     </button>
@@ -206,7 +206,7 @@ export function CategoryFormSheet({ isOpen, onClose, onSave, initialData, mode =
               <button
                 onClick={handleSave}
                 disabled={!name.trim()}
-                className="w-full py-4 rounded-xl bg-accent-secondary text-white font-bold text-base disabled:opacity-40 active:scale-[0.98] transition-all"
+                className="w-full py-4 rounded-xl bg-accent-secondary text-text-on-accent font-bold text-base disabled:opacity-40 active:scale-[0.98] transition-all"
               >
                 {mode === 'add' ? 'Tambah Kategori ✨' : 'Simpan Perubahan'}
               </button>

@@ -18,6 +18,7 @@ import { haptic } from '@/lib/utils/haptic';
 import { XP_REWARDS } from '@/lib/gamification/xp';
 import { compressImage } from '@/lib/utils/image';
 import { getAvailableCredit } from '@/lib/finance/credit-card';
+import { useToast } from '@/components/ui/Toast';
 import type { TransactionType, WalletType } from '@/lib/types';
 
 function getWalletTransactionDelta(walletType: WalletType | undefined, txType: TransactionType, amount: number) {
@@ -35,6 +36,7 @@ interface AddTransactionSheetProps {
 }
 
 export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddTransactionSheetProps) {
+  const toast = useToast();
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('0');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
@@ -48,7 +50,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
 
   const handleAiCategorize = async () => {
     if (!note.trim()) {
-      alert('Tulis catatan transaksi dulu ya sebelum minta tolong AI.');
+      toast.warning('Tulis catatan transaksi dulu ya sebelum minta tolong AI.');
       return;
     }
     
@@ -135,7 +137,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
         const error = err as Error;
         console.error(error);
         haptic('error');
-        alert(error.message || 'Gagal mengekstrak bill dari foto.');
+        toast.error(error.message || "Gagal mengekstrak bill dari foto.");
       } finally {
         setIsAiExtracting(false);
       }
@@ -150,7 +152,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('Pencatatan suara tidak didukung oleh browser Anda. Gunakan Chrome atau Safari.');
+      toast.error('Pencatatan suara tidak didukung oleh browser Anda. Gunakan Chrome atau Safari.');
       return;
     }
 
@@ -209,7 +211,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
         const error = err as Error;
         console.error(error);
         haptic('error');
-        alert(error.message || 'AI gagal memahami catatan suaramu.');
+        toast.error(error.message || "AI gagal memahami catatan suaramu.");
       } finally {
         setIsAiExtracting(false);
       }

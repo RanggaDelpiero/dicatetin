@@ -100,7 +100,7 @@ export function AIGoalPlannerSheet({ isOpen, onClose, goalName, targetAmount, cu
               </p>
               <button
                 onClick={handleGeneratePlan}
-                className="px-6 py-3 rounded-2xl bg-accent-secondary text-white text-sm font-bold active:scale-95 transition-transform flex items-center gap-2 shadow-md"
+                className="px-6 py-3 rounded-2xl bg-accent-secondary text-text-on-accent text-sm font-bold active:scale-95 transition-transform flex items-center gap-2 shadow-md"
               >
                 <Sparkle size={18} weight="fill" /> Buatkan Rencana
               </button>
@@ -198,7 +198,7 @@ export function AIGoalPlannerSheet({ isOpen, onClose, goalName, targetAmount, cu
           <div className="pt-2">
              <button
               onClick={() => { haptic('success'); onClose(); }}
-              className="w-full py-4 rounded-2xl bg-accent-secondary text-white font-bold text-base active:scale-[0.98] transition-transform shadow-md"
+              className="w-full py-4 rounded-2xl bg-accent-secondary text-text-on-accent font-bold text-base active:scale-[0.98] transition-transform shadow-md"
             >
               Tutup & Coba Jalankan Rencana!
             </button>

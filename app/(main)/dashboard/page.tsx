@@ -174,7 +174,7 @@ export default function DashboardPage() {
                         <Cloud size={18} weight="duotone" />
                       </motion.div>
                       {syncQueue.length > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-accent-secondary text-white text-[8px] font-bold flex items-center justify-center">
+                        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-accent-secondary text-text-on-accent text-[8px] font-bold flex items-center justify-center">
                           {syncQueue.length}
                         </span>
                       )}
@@ -201,7 +201,7 @@ export default function DashboardPage() {
               >
                 <Bell size={20} weight="fill" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-accent-danger text-white text-[9px] font-bold flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-accent-danger text-text-on-accent text-[9px] font-bold flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -223,7 +223,7 @@ export default function DashboardPage() {
       <div className="px-5 space-y-6 pb-24">
         {/* Balance Card - PREMIUM AI REDESIGN */}
         <motion.div
-          className="relative overflow-hidden rounded-[28px] p-6 bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-white shadow-ai-glow mt-4"
+          className="relative overflow-hidden rounded-[28px] p-6 bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-text-on-accent shadow-ai-glow mt-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, type: 'spring', stiffness: 200 }}
@@ -318,7 +318,7 @@ export default function DashboardPage() {
               </p>
               <button
                 onClick={() => { haptic('light'); setShowBudgetSheet(true); }}
-                className="px-6 py-3.5 rounded-2xl bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-white text-sm font-bold active:scale-95 transition-all shadow-ai-glow"
+                className="px-6 py-3.5 rounded-2xl bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-text-on-accent text-sm font-bold active:scale-95 transition-all shadow-ai-glow"
               >
                 Atur Budget Sekarang ✨
               </button>

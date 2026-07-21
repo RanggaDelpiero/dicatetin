@@ -148,7 +148,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 rounded-2xl bg-accent-primary text-white font-bold text-[17px] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(34,197,94,0.3)] disabled:bg-text-tertiary/40 disabled:cursor-not-allowed"
+                className="w-full py-4 rounded-2xl bg-accent-primary text-text-on-accent font-bold text-[17px] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(34,197,94,0.3)] disabled:bg-text-tertiary/40 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />

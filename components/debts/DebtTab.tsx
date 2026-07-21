@@ -93,7 +93,7 @@ export function DebtTab() {
         </div>
         <button
           onClick={() => { haptic('light'); setShowAddSheet(true); }}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-accent-secondary text-white text-sm font-semibold active:scale-95 transition-transform"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-accent-secondary text-text-on-accent text-sm font-semibold active:scale-95 transition-transform"
         >
           <Plus size={16} weight="bold" />
           Tambah
@@ -257,7 +257,7 @@ export function DebtTab() {
           </div>
           <button
             onClick={handleAddDebt}
-            className="w-full py-4 rounded-2xl bg-accent-danger text-white font-semibold text-base active:scale-[0.98] transition-transform"
+            className="w-full py-4 rounded-2xl bg-accent-danger text-text-on-accent font-semibold text-base active:scale-[0.98] transition-transform"
           >
             Tambah Hutang 📝
           </button>
@@ -294,7 +294,7 @@ export function DebtTab() {
           </div>
           <button
             onClick={() => showPaySheet && handlePayment(showPaySheet)}
-            className="w-full py-4 rounded-2xl bg-accent-primary text-white font-semibold text-base active:scale-[0.98] transition-transform"
+            className="w-full py-4 rounded-2xl bg-accent-primary text-text-on-accent font-semibold text-base active:scale-[0.98] transition-transform"
           >
             Bayar 💰
           </button>

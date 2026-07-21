@@ -19,6 +19,7 @@ import { getLevelProgress, getLevelTitle } from '@/lib/gamification/xp';
 import { getStreakColor, getStreakMessage } from '@/lib/gamification/streak';
 import { BADGES } from '@/lib/gamification/badges';
 import { haptic } from '@/lib/utils/haptic';
+import { useToast } from '@/components/ui/Toast';
 import { useSyncStore } from '@/lib/stores/sync-store';
 import { formatRelativeDate } from '@/lib/utils/date';
 import { getCurrentUserId } from '@/lib/stores/auth-store';
@@ -33,6 +34,8 @@ export default function ProfilePage() {
   const { progress } = useGamificationStore();
   const { isOnline, isSyncing, lastSyncTime, lastError, getPendingCount } = useSyncStore();
   const { user } = useAuthStore();
+  const { transactions } = useTransactionStore();
+  const toast = useToast();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -201,7 +204,7 @@ export default function ProfilePage() {
     const notificationStore = useNotificationStore.getState();
     notificationStore.generateNotifications();
 
-    alert('Berhasil membuat dummy data! Silakan cek Dashboard, Transaksi, Hutang/Split, dan chat AI Advisor 🐷🚀');
+    toast.success('Dummy data berhasil dibuat! Cek Dashboard, Transaksi, dan AI Advisor 🐷');
     window.location.reload();
   };
 

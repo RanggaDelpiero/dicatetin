@@ -244,7 +244,7 @@ export function TransactionDetailSheet({
                 {onEdit && (
                   <button
                     onClick={() => { onEdit(); haptic('light'); }}
-                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-accent-secondary text-white font-bold text-sm active:scale-[0.98] transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-accent-secondary text-text-on-accent font-bold text-sm active:scale-[0.98] transition-all"
                   >
                     <PencilSimple size={16} weight="bold" /> Edit
                   </button>

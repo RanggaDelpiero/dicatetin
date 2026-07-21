@@ -177,10 +177,10 @@ export default function WalletsPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                      <DynamicIcon name={wallet.icon} size={18} weight="fill" className="text-white" />
+                      <DynamicIcon name={wallet.icon} size={18} weight="fill" className="text-text-on-accent" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">{wallet.name}</p>
+                      <p className="text-sm font-semibold text-text-on-accent">{wallet.name}</p>
                       <p className="text-[11px] text-white/60 capitalize">{wallet.type}</p>
                     </div>
                   </div>
@@ -203,7 +203,7 @@ export default function WalletsPage() {
                   <div className="space-y-3">
                     <div>
                       <p className="text-white/80 text-xs">Tagihan berjalan</p>
-                      <p className="text-[28px] font-bold text-white tabular-nums tracking-tight leading-tight">
+                      <p className="text-[28px] font-bold text-text-on-accent tabular-nums tracking-tight leading-tight">
                         {formatCurrency(wallet.credit_outstanding || 0)}
                       </p>
                     </div>
@@ -211,21 +211,21 @@ export default function WalletsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-white/80 text-[11px]">Sisa Limit</p>
-                        <p className="text-white font-medium text-sm tabular-nums">
+                        <p className="text-text-on-accent font-medium text-sm tabular-nums">
                           {formatCurrency(getAvailableCredit(wallet.credit_limit, wallet.credit_outstanding))}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-white/80 text-[11px]">Jatuh Tempo</p>
                         <div className="flex items-center gap-1 justify-end">
-                          <p className="text-white font-medium text-sm">
+                          <p className="text-text-on-accent font-medium text-sm">
                             {wallet.credit_due_date ? new Date(wallet.credit_due_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-'}
                           </p>
                           {wallet.credit_due_date && (
                             <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
-                              getCreditCardPaymentStatus(wallet.credit_due_date) === 'overdue' ? 'bg-red-500 text-white' :
-                              getCreditCardPaymentStatus(wallet.credit_due_date) === 'due-soon' ? 'bg-orange-400 text-white' :
-                              'bg-green-500 text-white'
+                              getCreditCardPaymentStatus(wallet.credit_due_date) === 'overdue' ? 'bg-accent-danger text-text-on-accent' :
+                              getCreditCardPaymentStatus(wallet.credit_due_date) === 'due-soon' ? 'bg-accent-warning text-text-on-accent' :
+                              'bg-accent-primary text-text-on-accent'
                             }`}>
                               {getCreditCardPaymentStatus(wallet.credit_due_date) === 'overdue' ? 'Telat' :
                                getCreditCardPaymentStatus(wallet.credit_due_date) === 'due-soon' ? 'Segera' : 'Aman'}
@@ -257,7 +257,7 @@ export default function WalletsPage() {
                     )}
                   </div>
                 ) : (
-                  <p className="text-[28px] font-bold text-white tabular-nums tracking-tight">
+                  <p className="text-[28px] font-bold text-text-on-accent tabular-nums tracking-tight">
                     {formatCurrency(wallet.balance)}
                   </p>
                 )}
@@ -305,7 +305,7 @@ export default function WalletsPage() {
                   onClick={() => setNewType(wt.id)}
                   className={`px-3 py-2 rounded-xl text-sm transition-all ${
                     newType === wt.id
-                      ? 'bg-accent-secondary text-white'
+                      ? 'bg-accent-secondary text-text-on-accent'
                       : 'bg-bg-secondary text-text-secondary'
                   }`}
                 >
@@ -435,7 +435,7 @@ export default function WalletsPage() {
           {/* Submit */}
           <button
             onClick={handleAddWallet}
-            className="w-full py-4 rounded-2xl bg-accent-primary text-white font-semibold text-base active:scale-[0.98] transition-transform shadow-[0_4px_20px_rgba(34,197,94,0.3)]"
+            className="w-full py-4 rounded-2xl bg-accent-primary text-text-on-accent font-semibold text-base active:scale-[0.98] transition-transform shadow-[0_4px_20px_rgba(34,197,94,0.3)]"
           >
             Tambah Kantong ✨
           </button>
@@ -454,7 +454,7 @@ export default function WalletsPage() {
                   onClick={() => { haptic('light'); setPaySourceWalletId(wallet.id); }}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl whitespace-nowrap text-sm transition-all flex-shrink-0 ${
                     paySourceWalletId === wallet.id
-                      ? 'bg-accent-secondary text-white shadow-md'
+                      ? 'bg-accent-secondary text-text-on-accent shadow-md'
                       : 'bg-bg-secondary text-text-secondary'
                   }`}
                 >
@@ -502,7 +502,7 @@ export default function WalletsPage() {
           </div>
           <button
             onClick={handlePayBill}
-            className="w-full py-4 rounded-2xl bg-accent-primary text-white font-semibold text-base active:scale-[0.98] transition-transform shadow-[0_4px_20px_rgba(34,197,94,0.3)]"
+            className="w-full py-4 rounded-2xl bg-accent-primary text-text-on-accent font-semibold text-base active:scale-[0.98] transition-transform shadow-[0_4px_20px_rgba(34,197,94,0.3)]"
           >
             Bayar Tagihan
           </button>
