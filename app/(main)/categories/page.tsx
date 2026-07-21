@@ -100,7 +100,7 @@ export default function CategoriesPage() {
           </motion.h1>
           <button
             onClick={() => { setShowForm(true); haptic('light'); }}
-            className="w-9 h-9 rounded-full bg-accent-secondary text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+            className="w-9 h-9 rounded-full bg-accent-secondary text-text-on-accent flex items-center justify-center shadow-lg active:scale-95 transition-transform"
           >
             <Plus size={18} weight="bold" />
           </button>

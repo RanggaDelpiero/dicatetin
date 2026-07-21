@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ToastProvider } from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
   title: "DicatetinAja — Pencatat Keuangan",
@@ -43,9 +44,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="DicatetinAja" />
       </head>
       <body className="min-h-full bg-bg-primary text-text-primary antialiased font-sans">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

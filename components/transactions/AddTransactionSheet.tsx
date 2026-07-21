@@ -19,6 +19,7 @@ import { XP_REWARDS } from '@/lib/gamification/xp';
 import { compressImage } from '@/lib/utils/image';
 import { getAvailableCredit } from '@/lib/finance/credit-card';
 import type { TransactionType, WalletType } from '@/lib/types';
+import { useToast } from '@/components/ui/Toast';
 
 function getWalletTransactionDelta(walletType: WalletType | undefined, txType: TransactionType, amount: number) {
   if (walletType === 'credit_card') {
@@ -35,6 +36,7 @@ interface AddTransactionSheetProps {
 }
 
 export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddTransactionSheetProps) {
+  const toast = useToast();
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('0');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
@@ -48,7 +50,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
 
   const handleAiCategorize = async () => {
     if (!note.trim()) {
-      alert('Tulis catatan transaksi dulu ya sebelum minta tolong AI.');
+      toast.error('Tulis catatan transaksi dulu ya sebelum minta tolong AI.');
       return;
     }
     
@@ -135,7 +137,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
         const error = err as Error;
         console.error(error);
         haptic('error');
-        alert(error.message || 'Gagal mengekstrak bill dari foto.');
+        toast.error(error.message || 'Gagal mengekstrak bill dari foto.');
       } finally {
         setIsAiExtracting(false);
       }
@@ -150,7 +152,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('Pencatatan suara tidak didukung oleh browser Anda. Gunakan Chrome atau Safari.');
+      toast.error('Pencatatan suara tidak didukung oleh browser Anda. Gunakan Chrome atau Safari.');
       return;
     }
 
@@ -209,7 +211,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
         const error = err as Error;
         console.error(error);
         haptic('error');
-        alert(error.message || 'AI gagal memahami catatan suaramu.');
+        toast.error(error.message || 'AI gagal memahami catatan suaramu.');
       } finally {
         setIsAiExtracting(false);
       }
@@ -407,7 +409,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
             onClick={() => handleTypeToggle('expense')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
               type === 'expense'
-                ? 'bg-accent-danger text-white shadow-md'
+                ? 'bg-accent-danger text-text-on-accent shadow-md'
                 : 'text-text-secondary'
             }`}
           >
@@ -418,7 +420,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
             onClick={() => handleTypeToggle('income')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
               type === 'income'
-                ? 'bg-accent-primary text-white shadow-md'
+                ? 'bg-accent-primary text-text-on-accent shadow-md'
                 : 'text-text-secondary'
             }`}
           >
@@ -449,7 +451,7 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
               onClick={() => { haptic('light'); setSelectedWalletId(wallet.id); }}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl whitespace-nowrap text-sm transition-all flex-shrink-0 ${
                 selectedWalletId === wallet.id
-                  ? 'bg-accent-secondary text-white shadow-md'
+                  ? 'bg-accent-secondary text-text-on-accent shadow-md'
                   : 'bg-bg-secondary text-text-secondary'
               }`}
             >
@@ -498,133 +500,3 @@ export function AddTransactionSheet({ isOpen, onClose, editTransactionId }: AddT
         </div>
 
         {/* Note & Date Row */}
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setShowNote(!showNote)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm ${
-              showNote || note ? 'bg-accent-secondary/10 text-accent-secondary' : 'bg-bg-secondary text-text-tertiary'
-            }`}
-          >
-            <Notebook size={16} weight="duotone" />
-            <span className="max-w-[80px] truncate">{note || 'Catatan'}</span>
-          </button>
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bg-secondary text-text-tertiary text-sm flex-1">
-            <CalendarBlank size={16} weight="duotone" />
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-transparent text-text-secondary text-sm outline-none w-full"
-            />
-          </div>
-        </div>
-
-        {/* AI Quick Add Row */}
-        <div className="flex gap-2 mb-4 relative">
-          {/* Camera Upload */}
-          <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-bg-secondary text-text-secondary hover:text-accent-secondary transition-colors cursor-pointer text-xs font-semibold">
-            <span>📸 Foto Bill</span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handlePhotoUpload}
-              disabled={isAiExtracting}
-            />
-          </label>
-
-          {/* Voice Command */}
-          <button
-            type="button"
-            onClick={handleVoiceRecord}
-            disabled={isAiExtracting}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-              isRecording
-                ? 'bg-accent-danger text-white animate-pulse'
-                : 'bg-bg-secondary text-text-secondary'
-            }`}
-          >
-            <span>{isRecording ? '🔊 Mendengarkan...' : '🎤 Ngomong'}</span>
-          </button>
-
-          {/* Loading Indicator */}
-          {isAiExtracting && (
-            <div className="absolute inset-0 bg-bg-elevated/80 flex items-center justify-center gap-2 rounded-xl">
-              <span className="w-4 h-4 rounded-full border-2 border-accent-secondary border-t-transparent animate-spin" />
-              <span className="text-xs font-semibold text-accent-secondary animate-pulse">DicatetinAja AI sedang membaca...</span>
-            </div>
-          )}
-        </div>
-
-        {/* Note Input */}
-        <AnimatePresence>
-          {showNote && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="mb-4 overflow-hidden"
-            >
-              <div className="relative">
-                <input
-                  type="text"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Tulis catatan (contoh: Kopi Starbucks)"
-                  className="w-full pl-4 pr-12 py-3 rounded-xl bg-bg-secondary text-text-primary placeholder:text-text-tertiary outline-none text-sm"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={handleAiCategorize}
-                  disabled={isCategorizing || !note.trim()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center bg-accent-secondary/10 text-accent-secondary disabled:opacity-50 transition-all active:scale-95"
-                  title="Pilih kategori otomatis dengan AI"
-                >
-                  {isCategorizing ? <SpinnerGap size={16} className="animate-spin" /> : <Sparkle size={16} weight="fill" />}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Keypad */}
-        <div className="grid grid-cols-3 gap-2 mb-4 flex-1 content-end">
-          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', 'backspace'].map(
-            (key) => (
-              <button
-                key={key}
-                onClick={() => handleKeyPress(key)}
-                className="h-14 rounded-xl bg-bg-secondary text-text-primary text-xl font-medium flex items-center justify-center active:bg-border-medium transition-colors haptic-press"
-              >
-                {key === 'backspace' ? (
-                  <Backspace size={24} weight="regular" />
-                ) : (
-                  key
-                )}
-              </button>
-            )
-          )}
-        </div>
-
-        {/* Submit Button */}
-        <button
-          onClick={handleSubmit}
-          disabled={numericAmount <= 0}
-          className={`w-full py-4 rounded-2xl text-white font-semibold text-[17px] transition-all active:scale-[0.98] ${
-            numericAmount > 0
-              ? type === 'income'
-                ? 'bg-accent-primary shadow-[0_4px_20px_rgba(34,197,94,0.3)]'
-                : 'bg-accent-danger shadow-[0_4px_20px_rgba(239,68,68,0.3)]'
-              : 'bg-text-tertiary/30 cursor-not-allowed'
-          }`}
-          style={{ marginBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}
-        >
-          {editTransactionId
-            ? '💾 Update Transaksi'
-            : (type === 'income' ? '💰 Simpan Pemasukan' : '💸 Simpan Pengeluaran')}
-        </button>
-      </div>
-    </BottomSheet>
-  );
-}

@@ -88,7 +88,7 @@ export default function GoalsPage() {
           </motion.h1>
           <button
             onClick={() => { setShowAddForm(true); haptic('light'); }}
-            className="w-9 h-9 rounded-full bg-accent-secondary text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+            className="w-9 h-9 rounded-full bg-accent-secondary text-text-on-accent flex items-center justify-center shadow-lg active:scale-95 transition-transform"
           >
             <Plus size={18} weight="bold" />
           </button>
@@ -202,7 +202,7 @@ export default function GoalsPage() {
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={() => { setShowContribForm(goal.id); haptic('light'); }}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-xs text-white active:scale-[0.98] transition-all"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-xs text-text-on-accent active:scale-[0.98] transition-all"
                       style={{ backgroundColor: goal.color }}
                     >
                       <Money size={14} weight="bold" /> Tambah Dana
@@ -304,7 +304,7 @@ export default function GoalsPage() {
                 <button
                   onClick={handleAddGoal}
                   disabled={!name.trim() || !targetAmount}
-                  className="w-full py-4 rounded-xl bg-accent-secondary text-white font-bold text-base disabled:opacity-40 active:scale-[0.98] transition-all"
+                  className="w-full py-4 rounded-xl bg-accent-secondary text-text-on-accent font-bold text-base disabled:opacity-40 active:scale-[0.98] transition-all"
                 >
                   Buat Target 🎯
                 </button>
@@ -369,7 +369,7 @@ export default function GoalsPage() {
                   <button
                     onClick={() => showContribForm && handleAddContribution(showContribForm)}
                     disabled={!contribAmount}
-                    className="flex-1 py-3 rounded-xl bg-accent-primary text-white font-bold text-sm disabled:opacity-40 active:scale-[0.98] transition-all"
+                    className="flex-1 py-3 rounded-xl bg-accent-primary text-text-on-accent font-bold text-sm disabled:opacity-40 active:scale-[0.98] transition-all"
                   >
                     Simpan 💰
                   </button>

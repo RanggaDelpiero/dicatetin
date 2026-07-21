@@ -87,7 +87,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                   <Bell size={20} weight="duotone" className="text-accent-secondary" />
                   <h2 className="text-lg font-bold text-text-primary">Notifikasi</h2>
                   {unreadCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-accent-danger text-white text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-accent-danger text-text-on-accent text-[10px] font-bold">
                       {unreadCount}
                     </span>
                   )}

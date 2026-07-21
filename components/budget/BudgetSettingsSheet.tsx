@@ -12,6 +12,7 @@ import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { formatCurrency } from '@/lib/utils/currency';
 import { haptic } from '@/lib/utils/haptic';
 import { Sparkle, SpinnerGap } from '@phosphor-icons/react';
+import { useToast } from '@/components/ui/Toast';
 
 interface BudgetSettingsSheetProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface BudgetSettingsSheetProps {
 }
 
 export function BudgetSettingsSheet({ isOpen, onClose }: BudgetSettingsSheetProps) {
+  const toast = useToast();
   const { categories, getTotalByType, getCategoryTotals } = useTransactionStore();
   const { budgets, setCategoryBudget } = useBudgetStore();
 
@@ -66,7 +68,7 @@ export function BudgetSettingsSheet({ isOpen, onClose }: BudgetSettingsSheetProp
       const categoryBreakdown = getCategoryTotals(firstDay, lastDay, 'expense');
 
       if (!income) {
-        alert('DicatetinAja butuh data pemasukan untuk menghitung budget idealmu. Yuk catat pemasukan dulu!');
+        toast.warning('DicatetinAja butuh data pemasukan untuk menghitung budget idealmu. Yuk catat pemasukan dulu!');
         return;
       }
 
@@ -107,7 +109,7 @@ export function BudgetSettingsSheet({ isOpen, onClose }: BudgetSettingsSheetProp
       }
     } catch (err) {
       console.error(err);
-      alert('Maaf, AI sedang sibuk. Coba atur manual dulu ya!');
+      toast.warning('Maaf, AI sedang sibuk. Coba atur manual dulu ya!');
     } finally {
       setIsAILoading(false);
     }
@@ -198,7 +200,7 @@ export function BudgetSettingsSheet({ isOpen, onClose }: BudgetSettingsSheetProp
         {/* Submit */}
         <button
           onClick={handleSave}
-          className="w-full py-4 rounded-2xl bg-accent-secondary text-white font-bold text-base active:scale-[0.98] transition-transform shadow-[0_4px_15px_rgba(0,174,214,0.3)] mt-2"
+          className="w-full py-4 rounded-2xl bg-accent-secondary text-text-on-accent font-bold text-base active:scale-[0.98] transition-transform shadow-[0_4px_15px_rgba(0,174,214,0.3)] mt-2"
         >
           Simpan Budget ✨
         </button>

@@ -13,6 +13,7 @@ import { useWalletStore } from '@/lib/stores/wallet-store';
 import { useDebtStore } from '@/lib/stores/debt-store';
 import { useReceivableStore } from '@/lib/stores/receivable-store';
 import { haptic } from '@/lib/utils/haptic';
+import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
 
 type ImportMode = 'replace' | 'merge';
@@ -34,6 +35,7 @@ export default function BackupPage() {
   const { lastBackupDate, backupReminderEnabled, backupReminderIntervalDays, exportAllData, importData, validateImport, setBackupReminder } = useBackupStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const toast = useToast();
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [importMode, setImportMode] = useState<ImportMode>('replace');
   const [importResult, setImportResult] = useState<{ success: boolean; message: string; counts: Record<string, number> } | null>(null);
@@ -83,7 +85,7 @@ export default function BackupPage() {
       haptic('success');
     } catch (err) {
       console.error('[Backup] Export failed:', err);
-      alert('Gagal export data. Coba lagi ya.');
+      toast.error('Gagal export data. Coba lagi ya.');
     } finally {
       setIsExporting(false);
     }
@@ -100,7 +102,7 @@ export default function BackupPage() {
         const validation = validateImport(parsed);
 
         if (!validation.valid) {
-          alert(`File tidak valid:\n${validation.errors.join('\n')}`);
+          toast.error(`File tidak valid: ${validation.errors.join(", ")}`);
           return;
         }
 
@@ -122,7 +124,7 @@ export default function BackupPage() {
         setImportResult(null);
         haptic('light');
       } catch {
-        alert('File bukan JSON yang valid.');
+        toast.error('File bukan JSON yang valid.');
       }
     };
     reader.readAsText(file);
@@ -249,7 +251,7 @@ export default function BackupPage() {
         <motion.button
           onClick={handleExport}
           disabled={isExporting}
-          className="w-full flex items-center gap-4 p-5 rounded-[20px] bg-gradient-to-r from-accent-primary to-accent-primary-hover text-white active:scale-[0.98] transition-all shadow-lg disabled:opacity-60"
+          className="w-full flex items-center gap-4 p-5 rounded-[20px] bg-gradient-to-r from-accent-primary to-accent-primary-hover text-text-on-accent active:scale-[0.98] transition-all shadow-lg disabled:opacity-60"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -260,7 +262,7 @@ export default function BackupPage() {
           </div>
           <div className="text-left flex-1">
             <p className="text-base font-bold">Export Semua Data</p>
-            <p className="text-xs text-white/70 mt-0.5">Download file JSON ke device kamu</p>
+            <p className="text-xs text-text-on-accent/70 mt-0.5">Download file JSON ke device kamu</p>
           </div>
         </motion.button>
 
@@ -362,7 +364,7 @@ export default function BackupPage() {
                   </button>
                   <button
                     onClick={handleImport}
-                    className={`flex-1 py-3 rounded-xl font-bold text-sm text-white ${
+                    className={`flex-1 py-3 rounded-xl font-bold text-sm text-text-on-accent ${
                       importMode === 'replace' ? 'bg-accent-danger' : 'bg-accent-primary'
                     }`}
                   >
@@ -470,7 +472,7 @@ export default function BackupPage() {
                         onClick={() => { setBackupReminder(true, days); haptic('light'); }}
                         className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
                           backupReminderIntervalDays === days
-                            ? 'bg-accent-secondary text-white'
+                            ? 'bg-accent-secondary text-text-on-accent'
                             : 'bg-bg-secondary text-text-secondary'
                         }`}
                       >

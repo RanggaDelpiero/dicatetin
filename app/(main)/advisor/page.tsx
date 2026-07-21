@@ -25,6 +25,7 @@ import { DynamicIcon } from '@/components/ui/DynamicIcon';
 import { AutopilotFeed } from '@/components/intelligence/AutopilotFeed';
 import { formatCurrency } from '@/lib/utils/currency';
 import { haptic } from '@/lib/utils/haptic';
+import { useToast } from '@/components/ui/Toast';
 import { getCurrentMonthRange, formatDate } from '@/lib/utils/date';
 import { XP_REWARDS } from '@/lib/gamification/xp';
 
@@ -38,6 +39,7 @@ const SUGGESTIONS = [
 export default function AdvisorPage() {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const toast = useToast();
   const [input, setInput] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'chat'>('overview');
 
@@ -138,7 +140,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
     } catch (err: unknown) {
       console.error(err);
       haptic('error');
-      alert('Gagal membuat laporan analisis keuangan AI. Silakan coba lagi.');
+      toast.error('Gagal membuat laporan analisis keuangan AI. Silakan coba lagi.');
     } finally {
       setReportLoading(false);
     }
@@ -328,7 +330,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
           ) : !report ? (
             <div className="flex flex-col items-center justify-center py-24 text-center space-y-5">
               <div className="relative w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] shadow-ai-glow">
-                <Sparkle size={48} weight="fill" className="text-white relative z-10" />
+                <Sparkle size={48} weight="fill" className="text-text-on-accent relative z-10" />
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md" />
               </div>
               <div>
@@ -339,7 +341,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
               </div>
               <button
                 onClick={generateReport}
-                className="px-6 py-3.5 rounded-2xl bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-white text-sm font-bold active:scale-95 transition-all shadow-ai-glow flex items-center gap-2 mt-2"
+                className="px-6 py-3.5 rounded-2xl bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-text-on-accent text-sm font-bold active:scale-95 transition-all shadow-ai-glow flex items-center gap-2 mt-2"
               >
                 <Sparkle size={18} weight="fill" /> Mulai Analisis Keuangan
               </button>
@@ -472,7 +474,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
                         {monthlyIncome > 0 && (
                           <div
                             style={{ width: `${incomeWidthPct}%` }}
-                            className="bg-gradient-to-r from-accent-primary to-[#10B981] h-full flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500"
+                            className="bg-gradient-to-r from-accent-primary to-[#10B981] h-full flex items-center justify-center text-[10px] font-bold text-text-on-accent transition-all duration-500"
                           >
                             {Math.round(incomeWidthPct)}%
                           </div>
@@ -480,7 +482,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
                         {monthlyExpense > 0 && (
                           <div
                             style={{ width: `${expenseWidthPct}%` }}
-                            className="bg-gradient-to-r from-accent-danger to-[#EF4444] h-full flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500"
+                            className="bg-gradient-to-r from-accent-danger to-[#EF4444] h-full flex items-center justify-center text-[10px] font-bold text-text-on-accent transition-all duration-500"
                           >
                             {Math.round(expenseWidthPct)}%
                           </div>
@@ -616,7 +618,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
                   <div
                     className={`max-w-[85%] rounded-[20px] px-4 py-3 text-sm leading-relaxed shadow-sm ${
                       isUser
-                        ? 'bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-white rounded-br-[4px]'
+                        ? 'bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] text-text-on-accent rounded-br-[4px]'
                         : 'bg-bg-elevated text-text-primary rounded-bl-[4px] border border-border-light'
                     }`}
                   >
@@ -684,7 +686,7 @@ Kembalikan respon HANYA berupa JSON mentah dengan struktur berikut:
               <button
                 onClick={() => handleSend(input)}
                 disabled={!input.trim() || isLoading}
-                className={`w-[48px] h-[48px] rounded-2xl flex items-center justify-center text-white active:scale-95 transition-all shadow-md ${
+                className={`w-[48px] h-[48px] rounded-2xl flex items-center justify-center text-text-on-accent active:scale-95 transition-all shadow-md ${
                   input.trim() && !isLoading
                     ? 'bg-gradient-to-br from-[#6366F1] via-[#A855F7] to-[#EC4899] shadow-ai-glow'
                     : 'bg-text-tertiary/30 cursor-not-allowed shadow-none'
