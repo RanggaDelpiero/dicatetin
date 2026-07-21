@@ -19,6 +19,7 @@ import { useGamificationStore } from '@/lib/stores/gamification-store';
 import { useDebtStore } from '@/lib/stores/debt-store';
 import { useReceivableStore } from '@/lib/stores/receivable-store';
 import { useBudgetStore } from '@/lib/stores/budget-store';
+import { useCategoryStore } from '@/lib/stores/category-store';
 import { buildFinancialContext } from '@/lib/ai/context';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { DynamicIcon } from '@/components/ui/DynamicIcon';
@@ -54,6 +55,7 @@ export default function AdvisorPage() {
   const { debts } = useDebtStore();
   const { receivables } = useReceivableStore();
   const { budgets } = useBudgetStore();
+  const { categories } = useCategoryStore();
 
   const generateReport = async () => {
     haptic('medium');

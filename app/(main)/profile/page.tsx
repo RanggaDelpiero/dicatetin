@@ -34,6 +34,7 @@ export default function ProfilePage() {
   const { progress } = useGamificationStore();
   const { isOnline, isSyncing, lastSyncTime, lastError, getPendingCount } = useSyncStore();
   const { user } = useAuthStore();
+  const { transactions } = useTransactionStore();
   const toast = useToast();
   const [mounted, setMounted] = useState(false);
 

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from 'recharts';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine, type TooltipProps } from 'recharts';
 import { formatCurrency } from '@/lib/utils/currency';
+import { formatDate } from '@/lib/utils/date';
 
 interface CashFlowChartProps {
   series: { date: string; balance: number }[];
@@ -40,9 +41,10 @@ export function CashFlowChart({ series, lowestBalance }: CashFlowChartProps) {
     );
   };
 
-  const renderTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const val = payload[0].value;
+      const val = Number(payload[0].value) ?? 0;
       const isDanger = val < 0;
       return (
         <div className="glass px-3 py-2 rounded-lg border border-border-light shadow-card text-xs">
